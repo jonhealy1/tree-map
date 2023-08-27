@@ -21,7 +21,7 @@ function MapComponent() {
             const minLat = bounds.getSouth();
             const maxLng = bounds.getEast();
             const maxLat = bounds.getNorth();
-            let url = `https://575qjd8cuk.execute-api.us-east-1.amazonaws.com/prod/trees/search?min_lat=${minLat}&max_lat=${maxLat}&min_lng=${minLng}&max_lng=${maxLng}&limit=4000&return_all=true&count=false&count_only=false`;
+            let url = `https://575qjd8cuk.execute-api.us-east-1.amazonaws.com/prod/trees/search?min_lat=${minLat}&max_lat=${maxLat}&min_lng=${minLng}&max_lng=${maxLng}&limit=4000&return_all=true&count=false&count_only=false&limit=1000`;
 
             if (selectedGenus) {
                 url += `&botanical_genus=${selectedGenus}`;
