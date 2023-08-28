@@ -4,9 +4,52 @@ import 'maplibre-gl/dist/maplibre-gl.css';
 import Select from 'react-select';
 
 function MapComponent() {
-    const [data, setData] = useState(null);
+    const [data, setData] = useState({});
+    const [genusType, setGenusType] = useState(null);
     const [selectedGenus, setSelectedGenus] = useState(null);
+    const [mapLoaded, setMapLoaded] = useState(false);
     const mapRef = useRef(null);
+
+    const fetchDataForMap = () => {
+        if (!mapRef.current || !mapLoaded) return;
+
+        const map = mapRef.current;
+        const bounds = map.getBounds();
+        const minLng = bounds.getWest();
+        const minLat = bounds.getSouth();
+        const maxLng = bounds.getEast();
+        const maxLat = bounds.getNorth();
+        let url = `https://575qjd8cuk.execute-api.us-east-1.amazonaws.com/prod/trees/search?min_lat=${minLat}&max_lat=${maxLat}&min_lng=${minLng}&max_lng=${maxLng}&limit=4000&return_all=true&count=false&count_only=false`;
+
+        if (genusType && selectedGenus) {
+            url += `&${genusType.value}=${selectedGenus}`;
+        }
+
+        console.log("Fetching data from URL:", url);  // Let's log the URL being used
+
+        fetch(url)
+            .then(response => response.json())
+            .then(fetchedData => {
+                if (map.getSource('points')) {
+                    map.getSource('points').setData(fetchedData);
+                } else {
+                    map.addSource('points', {
+                        'type': 'geojson',
+                        'data': fetchedData
+                    });
+
+                    map.addLayer({
+                        'id': 'points',
+                        'type': 'circle',
+                        'source': 'points',
+                        'paint': {
+                            'circle-radius': 6,
+                            'circle-color': '#B42222'
+                        }
+                    });
+                }
+            });
+    };
 
     useEffect(() => {
         mapRef.current = new maplibregl.Map({
@@ -17,74 +60,44 @@ function MapComponent() {
         });
 
         mapRef.current.on('load', () => {
+            setMapLoaded(true);
             fetchDataForMap();
-        });
-
-        mapRef.current.on('moveend', () => {
-            fetchDataForMap();
-        });
-
-        return () => mapRef.current && mapRef.current.remove();
-    }, []);
-
-    const fetchDataForMap = () => {
-        if (mapRef.current) {
-            const bounds = mapRef.current.getBounds();
-            const minLng = bounds.getWest();
-            const minLat = bounds.getSouth();
-            const maxLng = bounds.getEast();
-            const maxLat = bounds.getNorth();
-            let url = `https://575qjd8cuk.execute-api.us-east-1.amazonaws.com/prod/trees/search?min_lat=${minLat}&max_lat=${maxLat}&min_lng=${minLng}&max_lng=${maxLng}&limit=5000&return_all=true&count=false&count_only=false`;
-
-            if (selectedGenus) {
-                url += `&botanical_genus=${selectedGenus}`;
-            }
-
-            fetch(url)
+            fetch('https://575qjd8cuk.execute-api.us-east-1.amazonaws.com/prod/data/overview')
                 .then(response => response.json())
-                .then(fetchedData => {
-                    if (mapRef.current.getSource('points')) {
-                        mapRef.current.getSource('points').setData(fetchedData);
-                    } else {
-                        mapRef.current.addSource('points', {
-                            'type': 'geojson',
-                            'data': fetchedData
-                        });
-                        mapRef.current.addLayer({
-                            'id': 'points',
-                            'type': 'circle',
-                            'source': 'points',
-                            'paint': {
-                                'circle-radius': 6,
-                                'circle-color': '#B42222'
-                            }
-                        });
-                    }
-                });
-        }
-    };
+                .then(overviewData => setData(overviewData));
+        });
+
+        mapRef.current.on('moveend', fetchDataForMap);
+
+        return () => mapRef.current.remove();
+    }, []); 
 
     useEffect(() => {
-        // You already have fetchDataForMap inside the first useEffect.
-        fetch('https://575qjd8cuk.execute-api.us-east-1.amazonaws.com/prod/data/overview')
-            .then(response => response.json())
-            .then(overviewData => setData(overviewData.botanical_name_genus));
-    }, [selectedGenus]);    
+        fetchDataForMap();
+    }, [genusType, selectedGenus]);
 
-    const handleGenusClick = (genus) => {
-        setSelectedGenus(genus);
-    };
+    const options = [
+        { value: 'botanical_genus', label: 'Botanical Genus', key: 'botanical_name_genus' },
+        { value: 'common_genus', label: 'Common Genus', key: 'common_genus' }
+    ];
 
-    const genusOptions = data ? data.filter(name => name && name.trim() !== '').map(name => ({ value: name, label: name })) : [];
+    const genusOptions = genusType ? data[genusType.key].filter(name => name && name.trim() !== '').map(name => ({ value: name, label: name })) : [];
 
     return (
         <div style={{ display: 'flex' }}>
             <div style={{ width: '20%', overflowY: 'auto', maxHeight: '100vh', borderRight: '1px solid gray' }}>
                 <Select
-                    options={genusOptions}
-                    onChange={(selectedOption) => handleGenusClick(selectedOption.value)}
-                    placeholder="Select a genus..."
+                    options={options}
+                    onChange={(selectedOption) => setGenusType(selectedOption)}
+                    placeholder="Select a genus type..."
                     isSearchable
+                />
+                <Select
+                    options={genusOptions}
+                    onChange={(selectedOption) => setSelectedGenus(selectedOption.value)}
+                    placeholder={`Select a ${genusType ? genusType.label : ''}...`}
+                    isSearchable
+                    isDisabled={!genusType}
                 />
             </div>
             <div id="map" style={{ flex: 1, height: '100vh' }}></div>
