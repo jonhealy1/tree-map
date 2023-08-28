@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useRef } from 'react';
 import maplibregl from 'maplibre-gl';
 import 'maplibre-gl/dist/maplibre-gl.css';
 import Select from 'react-select';
@@ -6,22 +6,35 @@ import Select from 'react-select';
 function MapComponent() {
     const [data, setData] = useState(null);
     const [selectedGenus, setSelectedGenus] = useState(null);
+    const mapRef = useRef(null);
 
     useEffect(() => {
-        const map = new maplibregl.Map({
+        mapRef.current = new maplibregl.Map({
             container: 'map',
             style: 'https://api.maptiler.com/maps/streets/style.json?key=6jk9aonLicRFoRqvljrc',
             center: [-106.3468, 56.1304],
             zoom: 4,
         });
 
-        const fetchDataForMap = () => {
-            const bounds = map.getBounds();
+        mapRef.current.on('load', () => {
+            fetchDataForMap();
+        });
+
+        mapRef.current.on('moveend', () => {
+            fetchDataForMap();
+        });
+
+        return () => mapRef.current && mapRef.current.remove();
+    }, []);
+
+    const fetchDataForMap = () => {
+        if (mapRef.current) {
+            const bounds = mapRef.current.getBounds();
             const minLng = bounds.getWest();
             const minLat = bounds.getSouth();
             const maxLng = bounds.getEast();
             const maxLat = bounds.getNorth();
-            let url = `https://575qjd8cuk.execute-api.us-east-1.amazonaws.com/prod/trees/search?min_lat=${minLat}&max_lat=${maxLat}&min_lng=${minLng}&max_lng=${maxLng}&limit=4000&return_all=true&count=false&count_only=false&limit=1000`;
+            let url = `https://575qjd8cuk.execute-api.us-east-1.amazonaws.com/prod/trees/search?min_lat=${minLat}&max_lat=${maxLat}&min_lng=${minLng}&max_lng=${maxLng}&limit=4000&return_all=true&count=false&count_only=false`;
 
             if (selectedGenus) {
                 url += `&botanical_genus=${selectedGenus}`;
@@ -30,15 +43,14 @@ function MapComponent() {
             fetch(url)
                 .then(response => response.json())
                 .then(fetchedData => {
-                    if (map.getSource('points')) {
-                        map.getSource('points').setData(fetchedData);
+                    if (mapRef.current.getSource('points')) {
+                        mapRef.current.getSource('points').setData(fetchedData);
                     } else {
-                        map.addSource('points', {
+                        mapRef.current.addSource('points', {
                             'type': 'geojson',
                             'data': fetchedData
                         });
-
-                        map.addLayer({
+                        mapRef.current.addLayer({
                             'id': 'points',
                             'type': 'circle',
                             'source': 'points',
@@ -49,17 +61,14 @@ function MapComponent() {
                         });
                     }
                 });
-        };
+        }
+    };
 
-        map.on('load', fetchDataForMap);
-        map.on('moveend', fetchDataForMap);
-
-        // Fetch data for the dropdown
+    useEffect(() => {
+        fetchDataForMap();
         fetch('https://575qjd8cuk.execute-api.us-east-1.amazonaws.com/prod/data/overview')
             .then(response => response.json())
             .then(overviewData => setData(overviewData.botanical_name_genus));
-
-        return () => map.remove();
     }, [selectedGenus]);
 
     const handleGenusClick = (genus) => {
