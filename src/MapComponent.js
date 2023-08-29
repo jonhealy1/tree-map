@@ -7,12 +7,18 @@ function MapComponent() {
     const [data, setData] = useState({});
     const [genusType, setGenusType] = useState(null);
     const [selectedGenus, setSelectedGenus] = useState(null);
-    const [mapLoaded, setMapLoaded] = useState(false);
     const mapRef = useRef(null);
+    const selectedGenusRef = useRef(selectedGenus);
+    const genusTypeRef = useRef(genusType);
+
+    useEffect(() => {
+        selectedGenusRef.current = selectedGenus;
+        genusTypeRef.current = genusType;
+    }, [selectedGenus, genusType]);
 
     const fetchDataForMap = () => {
-        if (!mapRef.current || !mapLoaded) return;
-
+        if (!mapRef.current) return;
+    
         const map = mapRef.current;
         const bounds = map.getBounds();
         const minLng = bounds.getWest();
@@ -20,16 +26,16 @@ function MapComponent() {
         const maxLng = bounds.getEast();
         const maxLat = bounds.getNorth();
         let url = `https://575qjd8cuk.execute-api.us-east-1.amazonaws.com/prod/trees/search?min_lat=${minLat}&max_lat=${maxLat}&min_lng=${minLng}&max_lng=${maxLng}&limit=4000&return_all=true&count=false&count_only=false`;
-
-        if (genusType && selectedGenus) {
-            url += `&${genusType.value}=${selectedGenus}`;
+    
+        if (genusTypeRef.current && selectedGenusRef.current) {
+            url += `&${genusTypeRef.current.value}=${selectedGenusRef.current}`;
         }
-
-        console.log("Fetching data from URL:", url);  // Let's log the URL being used
-
+    
         fetch(url)
             .then(response => response.json())
             .then(fetchedData => {
+                if (!map.isStyleLoaded()) return; // Ensure the map's style is loaded
+    
                 if (map.getSource('points')) {
                     map.getSource('points').setData(fetchedData);
                 } else {
@@ -37,7 +43,7 @@ function MapComponent() {
                         'type': 'geojson',
                         'data': fetchedData
                     });
-
+    
                     map.addLayer({
                         'id': 'points',
                         'type': 'circle',
@@ -50,6 +56,7 @@ function MapComponent() {
                 }
             });
     };
+    
 
     useEffect(() => {
         mapRef.current = new maplibregl.Map({
@@ -60,7 +67,6 @@ function MapComponent() {
         });
 
         mapRef.current.on('load', () => {
-            setMapLoaded(true);
             fetchDataForMap();
             fetch('https://575qjd8cuk.execute-api.us-east-1.amazonaws.com/prod/data/overview')
                 .then(response => response.json())
