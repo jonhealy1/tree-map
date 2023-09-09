@@ -142,19 +142,19 @@ function MapComponent() {
                 </div>
             </div>
     
-            <div id="map" style={{ flex: 1, height: '100vh' }}></div>
-    
-            <Select
-                options={mapStyles}
-                defaultValue={mapStyles[0]}
-                onChange={(selectedOption) => {
-                    if (mapRef.current) {
-                        mapRef.current.setStyle(selectedOption.value);
-                    }
-                }}
-                isSearchable={false}
-                className="map-style-selector"
-            />
+            <div id="map" style={{ flex: 1, height: '100vh' }}>
+                <Select
+                    options={mapStyles}
+                    defaultValue={mapStyles[0]}
+                    onChange={(selectedOption) => {
+                        if (mapRef.current) {
+                            mapRef.current.setStyle(selectedOption.value);
+                        }
+                    }}
+                    isSearchable={false}
+                    className="map-style-selector"
+                />
+            </div>
     
             <div style={{
                 position: 'absolute',
