@@ -28,8 +28,9 @@ function MapComponent() {
         const minLat = bounds.getSouth();
         const maxLng = bounds.getEast();
         const maxLat = bounds.getNorth();
-        let url = `https://575qjd8cuk.execute-api.us-east-1.amazonaws.com/prod/trees/search?min_lat=${minLat}&max_lat=${maxLat}&min_lng=${minLng}&max_lng=${maxLng}&limit=10000&return_all=false&count=true&count_only=false`;
-    
+        const returnAll = map.getZoom() > 16 ? 'true' : 'false';  // Check the zoom level here
+        let url = `https://575qjd8cuk.execute-api.us-east-1.amazonaws.com/prod/trees/search?min_lat=${minLat}&max_lat=${maxLat}&min_lng=${minLng}&max_lng=${maxLng}&limit=10000&return_all=${returnAll}&count=true&count_only=false`;
+
         if (genusTypeRef.current && selectedGenusRef.current) {
             url += `&${genusTypeRef.current.value}=${selectedGenusRef.current}`;
         }
@@ -143,8 +144,9 @@ function MapComponent() {
                     <p><strong>Zoom Level:</strong> {zoomLevel}</p>
                     {selectedTree && (
                         <div>
-                            <p><strong>Tree Id:</strong> {selectedTree.Id}</p> {selectedTree.id}
-                            {selectedTree.properties}
+                            <p><strong>Tree Id: </strong> {selectedTree.Id}</p> 
+                            <p><strong>Address: </strong> {selectedTree.Address}</p>
+                            <p><strong>DBH (CM): </strong> {selectedTree['DBH (DHP) (CM)']}</p>
                         </div>
                     )}
             </div>
