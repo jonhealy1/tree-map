@@ -16,8 +16,8 @@ function MapComponent() {
     const selectedGenusRef = useRef(selectedGenus);
     const genusTypeRef = useRef(genusType);
     const mapStyles = [
-        { value: 'https://api.maptiler.com/maps/streets/style.json?key=6jk9aonLicRFoRqvljrc', label: 'Streets' },
         { value: 'https://api.maptiler.com/maps/outdoor/style.json?key=6jk9aonLicRFoRqvljrc', label: 'Outdoor' },
+        { value: 'https://api.maptiler.com/maps/streets/style.json?key=6jk9aonLicRFoRqvljrc', label: 'Streets' },
         { value: 'https://api.maptiler.com/maps/basic/style.json?key=6jk9aonLicRFoRqvljrc', label: 'Basic' }
     ];
     
@@ -78,7 +78,7 @@ function MapComponent() {
     useEffect(() => {
         mapRef.current = new maplibregl.Map({
             container: 'map',
-            style: 'https://api.maptiler.com/maps/streets/style.json?key=6jk9aonLicRFoRqvljrc',
+            style: 'https://api.maptiler.com/maps/outdoor/style.json?key=6jk9aonLicRFoRqvljrc',
             center: [-123.1216, 49.2827],
             zoom: 10,
         });
