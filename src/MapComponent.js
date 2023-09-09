@@ -8,6 +8,7 @@ function MapComponent() {
     const [genusType, setGenusType] = useState(null);
     const [selectedGenus, setSelectedGenus] = useState(null);
     const [info, setInfo] = useState({ count: 0, limit: 0 });
+    const [zoomLevel, setZoomLevel] = useState(4);
     const mapRef = useRef(null);
     const selectedGenusRef = useRef(selectedGenus);
     const genusTypeRef = useRef(genusType);
@@ -68,7 +69,7 @@ function MapComponent() {
         mapRef.current = new maplibregl.Map({
             container: 'map',
             style: 'https://api.maptiler.com/maps/streets/style.json?key=6jk9aonLicRFoRqvljrc',
-            center: [-106.3468, 56.1304],
+            center: [-123.1216, 49.2827],
             zoom: 4,
         });
 
@@ -77,6 +78,11 @@ function MapComponent() {
             fetch('https://575qjd8cuk.execute-api.us-east-1.amazonaws.com/prod/data/overview')
                 .then(response => response.json())
                 .then(overviewData => setData(overviewData));
+
+            // Update zoom level state when the map moves
+            mapRef.current.on('moveend', () => {
+                setZoomLevel(mapRef.current.getZoom().toFixed(2));
+            });
         });
 
         mapRef.current.on('moveend', fetchDataForMap);
@@ -124,6 +130,8 @@ function MapComponent() {
                 }}>
                     <p><strong>Limit:</strong> {info.limit}</p>
                     <p><strong>Count:</strong> {info.count}</p>
+                    <p><strong>Zoom Level:</strong> {zoomLevel}</p>
+
             </div>
         </div>
     );
