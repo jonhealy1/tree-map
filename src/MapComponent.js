@@ -1,7 +1,9 @@
 import React, { useEffect, useState, useRef } from 'react';
 import maplibregl from 'maplibre-gl';
 import 'maplibre-gl/dist/maplibre-gl.css';
+import './MapComponent.css'; 
 import Select from 'react-select';
+import logo from './assets/cif+png.png'; 
 
 function MapComponent() {
     const [data, setData] = useState({});
@@ -9,7 +11,7 @@ function MapComponent() {
     const [selectedGenus, setSelectedGenus] = useState(null);
     const [selectedTree, setSelectedTree] = useState(null);
     const [info, setInfo] = useState({ count: 0, limit: 0 });
-    const [zoomLevel, setZoomLevel] = useState(7);
+    const [zoomLevel, setZoomLevel] = useState(10);
     const mapRef = useRef(null);
     const selectedGenusRef = useRef(selectedGenus);
     const genusTypeRef = useRef(genusType);
@@ -72,7 +74,7 @@ function MapComponent() {
             container: 'map',
             style: 'https://api.maptiler.com/maps/streets/style.json?key=6jk9aonLicRFoRqvljrc',
             center: [-123.1216, 49.2827],
-            zoom: 7,
+            zoom: 10,
         });
 
         mapRef.current.on('load', () => {
@@ -114,20 +116,24 @@ function MapComponent() {
 
     return (
         <div style={{ display: 'flex' }}>
-            <div style={{ width: '20%', overflowY: 'auto', maxHeight: '100vh', borderRight: '1px solid gray' }}>
-                <Select
-                    options={options}
-                    onChange={(selectedOption) => setGenusType(selectedOption)}
-                    placeholder="Select a genus type..."
-                    isSearchable
-                />
-                <Select
-                    options={genusOptions}
-                    onChange={(selectedOption) => setSelectedGenus(selectedOption.value)}
-                    placeholder={`Select a ${genusType ? genusType.label : ''}...`}
-                    isSearchable
-                    isDisabled={!genusType}
-                />
+            <div className="header">
+                <img src={logo} alt="Logo" className="logo" />
+                
+                <div className="selection-menus">
+                    <Select
+                        options={options}
+                        onChange={(selectedOption) => setGenusType(selectedOption)}
+                        placeholder="Select a genus type..."
+                        isSearchable
+                    />
+                    <Select
+                        options={genusOptions}
+                        onChange={(selectedOption) => setSelectedGenus(selectedOption.value)}
+                        placeholder={`Select a ${genusType ? genusType.label : ''}...`}
+                        isSearchable
+                        isDisabled={!genusType}
+                    />
+                </div>
             </div>
             <div id="map" style={{ flex: 1, height: '100vh' }}></div>
                 <div style={{

@@ -1,0 +1,18 @@
+.header {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;  /* Aligns items to the left */
+    gap: 10px;  /* Spacing between the logo and the selection menus */
+}
+
+.logo {
+    width: 100px;
+    height: auto;
+    z-index: 1000;
+}
+
+.selection-menus {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;  /* Spacing between the two Select components */
+}
