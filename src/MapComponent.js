@@ -7,8 +7,9 @@ function MapComponent() {
     const [data, setData] = useState({});
     const [genusType, setGenusType] = useState(null);
     const [selectedGenus, setSelectedGenus] = useState(null);
+    const [selectedTree, setSelectedTree] = useState(null);
     const [info, setInfo] = useState({ count: 0, limit: 0 });
-    const [zoomLevel, setZoomLevel] = useState(4);
+    const [zoomLevel, setZoomLevel] = useState(7);
     const mapRef = useRef(null);
     const selectedGenusRef = useRef(selectedGenus);
     const genusTypeRef = useRef(genusType);
@@ -70,7 +71,7 @@ function MapComponent() {
             container: 'map',
             style: 'https://api.maptiler.com/maps/streets/style.json?key=6jk9aonLicRFoRqvljrc',
             center: [-123.1216, 49.2827],
-            zoom: 4,
+            zoom: 7,
         });
 
         mapRef.current.on('load', () => {
@@ -82,6 +83,15 @@ function MapComponent() {
             // Update zoom level state when the map moves
             mapRef.current.on('moveend', () => {
                 setZoomLevel(mapRef.current.getZoom().toFixed(2));
+            });
+
+            mapRef.current.on('click', 'points', (e) => {
+                if (mapRef.current.getZoom() > 16) {
+                    const treeData = e.features[0].properties; 
+                    console.log(e.features[0]);
+                    e.preventDefault();
+                    setSelectedTree(treeData);
+                }
             });
         });
 
@@ -131,7 +141,12 @@ function MapComponent() {
                     <p><strong>Limit:</strong> {info.limit}</p>
                     <p><strong>Count:</strong> {info.count}</p>
                     <p><strong>Zoom Level:</strong> {zoomLevel}</p>
-
+                    {selectedTree && (
+                        <div>
+                            <p><strong>Tree Id:</strong> {selectedTree.Id}</p> {selectedTree.id}
+                            {selectedTree.properties}
+                        </div>
+                    )}
             </div>
         </div>
     );
