@@ -7,6 +7,7 @@ function MapComponent() {
     const [data, setData] = useState({});
     const [genusType, setGenusType] = useState(null);
     const [selectedGenus, setSelectedGenus] = useState(null);
+    const [info, setInfo] = useState({ count: 0, limit: 0 });
     const mapRef = useRef(null);
     const selectedGenusRef = useRef(selectedGenus);
     const genusTypeRef = useRef(genusType);
@@ -25,7 +26,7 @@ function MapComponent() {
         const minLat = bounds.getSouth();
         const maxLng = bounds.getEast();
         const maxLat = bounds.getNorth();
-        let url = `https://575qjd8cuk.execute-api.us-east-1.amazonaws.com/prod/trees/search?min_lat=${minLat}&max_lat=${maxLat}&min_lng=${minLng}&max_lng=${maxLng}&limit=4000&return_all=true&count=false&count_only=false`;
+        let url = `https://575qjd8cuk.execute-api.us-east-1.amazonaws.com/prod/trees/search?min_lat=${minLat}&max_lat=${maxLat}&min_lng=${minLng}&max_lng=${maxLng}&limit=10000&return_all=false&count=true&count_only=false`;
     
         if (genusTypeRef.current && selectedGenusRef.current) {
             url += `&${genusTypeRef.current.value}=${selectedGenusRef.current}`;
@@ -34,8 +35,13 @@ function MapComponent() {
         fetch(url)
             .then(response => response.json())
             .then(fetchedData => {
+                setInfo({ count: fetchedData.count, limit: fetchedData.limit });
                 if (!map.isStyleLoaded()) return; // Ensure the map's style is loaded
     
+                // Adjust circle size based on zoom level
+                const zoom = map.getZoom();
+                const circleSize = zoom < 5 ? 4 : zoom < 10 ? 8 : 12;
+                
                 if (map.getSource('points')) {
                     map.getSource('points').setData(fetchedData);
                 } else {
@@ -49,8 +55,8 @@ function MapComponent() {
                         'type': 'circle',
                         'source': 'points',
                         'paint': {
-                            'circle-radius': 6,
-                            'circle-color': '#B42222'
+                            'circle-radius': circleSize,
+                            'circle-color': '#000000'
                         }
                     });
                 }
@@ -107,6 +113,18 @@ function MapComponent() {
                 />
             </div>
             <div id="map" style={{ flex: 1, height: '100vh' }}></div>
+                <div style={{
+                    position: 'absolute',
+                    bottom: '10px',
+                    left: '10px',
+                    backgroundColor: 'rgba(255, 255, 255, 0.8)',
+                    padding: '5px',
+                    borderRadius: '3px',
+                    boxShadow: '0px 0px 10px rgba(0, 0, 0, 0.3)'
+                }}>
+                    <p><strong>Limit:</strong> {info.limit}</p>
+                    <p><strong>Count:</strong> {info.count}</p>
+            </div>
         </div>
     );
 }
