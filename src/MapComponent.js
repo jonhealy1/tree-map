@@ -15,6 +15,12 @@ function MapComponent() {
     const mapRef = useRef(null);
     const selectedGenusRef = useRef(selectedGenus);
     const genusTypeRef = useRef(genusType);
+    const mapStyles = [
+        { value: 'https://api.maptiler.com/maps/streets/style.json?key=6jk9aonLicRFoRqvljrc', label: 'Streets' },
+        { value: 'https://api.maptiler.com/maps/outdoor/style.json?key=6jk9aonLicRFoRqvljrc', label: 'Outdoor' },
+        { value: 'https://api.maptiler.com/maps/basic/style.json?key=6jk9aonLicRFoRqvljrc', label: 'Basic' }
+    ];
+    
 
     useEffect(() => {
         selectedGenusRef.current = selectedGenus;
@@ -45,7 +51,7 @@ function MapComponent() {
     
                 // Adjust circle size based on zoom level
                 const zoom = map.getZoom();
-                const circleSize = zoom < 5 ? 4 : zoom < 10 ? 8 : 12;
+                const circleSize = zoom < 5 ? 3 : zoom < 12 ? 7 : 9;
                 
                 if (map.getSource('points')) {
                     map.getSource('points').setData(fetchedData);
@@ -135,16 +141,32 @@ function MapComponent() {
                     />
                 </div>
             </div>
+    
             <div id="map" style={{ flex: 1, height: '100vh' }}></div>
-                <div style={{
-                    position: 'absolute',
-                    bottom: '10px',
-                    left: '10px',
-                    backgroundColor: 'rgba(255, 255, 255, 0.8)',
-                    padding: '5px',
-                    borderRadius: '3px',
-                    boxShadow: '0px 0px 10px rgba(0, 0, 0, 0.3)'
-                }}>
+    
+            <Select
+                options={mapStyles}
+                defaultValue={mapStyles[0]}
+                onChange={(selectedOption) => {
+                    if (mapRef.current) {
+                        mapRef.current.setStyle(selectedOption.value);
+                    }
+                }}
+                isSearchable={false}
+                className="map-style-selector"
+            />
+    
+            <div style={{
+                position: 'absolute',
+                bottom: '10px',
+                left: '10px',
+                backgroundColor: 'rgba(255, 255, 255, 0.8)',
+                padding: '5px',
+                borderRadius: '3px',
+                boxShadow: '0px 0px 10px rgba(0, 0, 0, 0.3)'
+            }}>
+                  
+
                     <p><strong>Limit:</strong> {info.limit}</p>
                     <p><strong>Count:</strong> {info.count}</p>
                     <p><strong>Zoom Level:</strong> {zoomLevel}</p>
