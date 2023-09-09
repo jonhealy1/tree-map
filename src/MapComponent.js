@@ -144,9 +144,9 @@ function MapComponent() {
                     <p><strong>Zoom Level:</strong> {zoomLevel}</p>
                     {selectedTree && (
                         <div>
-                            <p><strong>Tree Id: </strong> {selectedTree.Id}</p> 
-                            <p><strong>Address: </strong> {selectedTree.Address}</p>
-                            <p><strong>DBH (CM): </strong> {selectedTree['DBH (DHP) (CM)']}</p>
+                            <p><strong>Tree Id:</strong> {selectedTree.Id}</p> 
+                            <p><strong>Address:</strong> {selectedTree.Address}</p>
+                            <p><strong>DBH (CM):</strong> {selectedTree['DBH (DHP) (CM)']}</p>
                         </div>
                     )}
             </div>
