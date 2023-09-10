@@ -23,9 +23,33 @@ function MapComponent() {
         { value: 'https://api.maptiler.com/maps/positron/style.json?key=6jk9aonLicRFoRqvljrc', label: 'Positron' },
         { value: 'https://api.maptiler.com/maps/pastel/style.json?key=6jk9aonLicRFoRqvljrc', label: 'Pastel' },
         { value: 'https://api.maptiler.com/maps/topo/style.json?key=6jk9aonLicRFoRqvljrc', label: 'Topo' },
-        { value: 'https://api.maptiler.com/maps/hybrid/style.json?key=6jk9aonLicRFoRqvljrc', label: 'Hybrid' }
+        { value: 'https://api.maptiler.com/maps/hybrid/style.json?key=6jk9aonLicRFoRqvljrc', label: 'Hybrid' },
+        { value: 'https://api.maptiler.com/maps/satellite/style.json?key=6jk9aonLicRFoRqvljrc', label: 'Satellite' },
+        { value: 'https://api.maptiler.com/maps/voyager/style.json?key=6jk9aonLicRFoRqvljrc', label: 'Voyager' },
+        { value: 'https://api.maptiler.com/maps/toner/style.json?key=6jk9aonLicRFoRqvljrc', label: 'Toner' }
+    ];
+    const provinces = [
+        { value: 'British Columbia', label: 'British Columbia' },
+        { value: 'Alberta', label: 'Alberta' },
+        { value: 'Ontario', label: 'Ontario' },
     ];
 
+    const provinceCoordinates = {
+        'British Columbia': [-121.9526, 50.9892],
+        'Alberta': [-113.8147, 52.2681],
+        'Ontario': [-80.9937, 46.4917],
+    };
+
+    const handleProvinceSelect = (selectedOption) => {
+        const coords = provinceCoordinates[selectedOption.value];
+        if (coords && mapRef.current) {
+            mapRef.current.flyTo({
+                center: coords,
+                zoom: 5.8 // Adjust zoom level as needed
+            });
+        }
+    };
+    
     useEffect(() => {
         selectedGenusRef.current = selectedGenus;
         genusTypeRef.current = genusType;
@@ -252,6 +276,12 @@ function MapComponent() {
                         placeholder={`Select a ${genusType ? genusType.label : ''}...`}
                         isSearchable
                         isDisabled={!genusType}
+                    />
+                    {/* Province Selector */}
+                    <Select
+                        options={provinces}
+                        onChange={handleProvinceSelect}
+                        placeholder="Select a province..."
                     />
                 </div>
             </div>
