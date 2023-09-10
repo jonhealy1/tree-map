@@ -10,7 +10,7 @@ function MapComponent() {
     const [genusType, setGenusType] = useState(null);
     const [selectedGenus, setSelectedGenus] = useState(null);
     const [selectedTree, setSelectedTree] = useState(null);
-    const [info, setInfo] = useState({ count: 0, limit: 0 });
+    const [info, setInfo] = useState({ count: 0 });
     const [zoomLevel, setZoomLevel] = useState(10);
     const mapRef = useRef(null);
     const selectedGenusRef = useRef(selectedGenus);
@@ -20,7 +20,10 @@ function MapComponent() {
         { value: 'https://api.maptiler.com/maps/streets/style.json?key=6jk9aonLicRFoRqvljrc', label: 'Streets' },
         { value: 'https://api.maptiler.com/maps/basic/style.json?key=6jk9aonLicRFoRqvljrc', label: 'Basic' },
         { value: 'https://api.maptiler.com/maps/darkmatter/style.json?key=6jk9aonLicRFoRqvljrc', label: 'Dark Matter' },
-        { value: 'https://api.maptiler.com/maps/positron/style.json?key=6jk9aonLicRFoRqvljrc', label: 'Positron' }
+        { value: 'https://api.maptiler.com/maps/positron/style.json?key=6jk9aonLicRFoRqvljrc', label: 'Positron' },
+        { value: 'https://api.maptiler.com/maps/pastel/style.json?key=6jk9aonLicRFoRqvljrc', label: 'Pastel' },
+        { value: 'https://api.maptiler.com/maps/topo/style.json?key=6jk9aonLicRFoRqvljrc', label: 'Topo' },
+        { value: 'https://api.maptiler.com/maps/hybrid/style.json?key=6jk9aonLicRFoRqvljrc', label: 'Hybrid' }
     ];
 
     useEffect(() => {
@@ -47,7 +50,7 @@ function MapComponent() {
         fetch(url)
             .then(response => response.json())
             .then(fetchedData => {
-                setInfo({ count: fetchedData.count, limit: fetchedData.limit });
+                setInfo({ count: fetchedData.count });
                 if (!map.isStyleLoaded()) return; // Ensure the map's style is loaded
     
                 // Adjust circle size based on zoom level
@@ -167,12 +170,11 @@ function MapComponent() {
                 position: 'absolute',
                 bottom: '10px',
                 left: '10px',
-                backgroundColor: 'rgba(255, 255, 255, 0.8)',
+                backgroundColor: 'rgba(255, 255, 255, 0.5)',
                 padding: '5px',
                 borderRadius: '3px',
                 boxShadow: '0px 0px 10px rgba(0, 0, 0, 0.3)'
             }}>
-                <p><strong>Limit:</strong> {info.limit}</p>
                 <p><strong>Count:</strong> {info.count}</p>
                 <p><strong>Zoom Level:</strong> {zoomLevel}</p>
                 {selectedTree && (
