@@ -26,7 +26,8 @@ function MapComponent() {
         { value: 'https://api.maptiler.com/maps/hybrid/style.json?key=6jk9aonLicRFoRqvljrc', label: 'Hybrid' },
         { value: 'https://api.maptiler.com/maps/satellite/style.json?key=6jk9aonLicRFoRqvljrc', label: 'Satellite' },
         { value: 'https://api.maptiler.com/maps/voyager/style.json?key=6jk9aonLicRFoRqvljrc', label: 'Voyager' },
-        { value: 'https://api.maptiler.com/maps/toner/style.json?key=6jk9aonLicRFoRqvljrc', label: 'Toner' }
+        { value: 'https://api.maptiler.com/maps/toner/style.json?key=6jk9aonLicRFoRqvljrc', label: 'Toner' },
+        { value: 'https://api.maptiler.com/maps/backdrop/style.json?key=6jk9aonLicRFoRqvljrc', label: 'Backdrop' }
     ];
     const provinces = [
         { value: 'British Columbia', label: 'British Columbia' },
@@ -39,6 +40,7 @@ function MapComponent() {
         'Alberta': [-113.8147, 52.2681],
         'Ontario': [-80.9937, 44.4917],
     };
+    const MARGIN = 100;
 
     const handleProvinceSelect = (selectedOption) => {
         const coords = provinceCoordinates[selectedOption.value];
@@ -59,7 +61,11 @@ function MapComponent() {
         if (!mapRef.current) return;
     
         const map = mapRef.current;
-        const bounds = map.getBounds();
+        const topLeft = map.unproject([MARGIN, MARGIN]);
+        const bottomRight = map.unproject([map.getContainer().clientWidth - MARGIN, map.getContainer().clientHeight - MARGIN]);
+
+        const bounds = new maplibregl.LngLatBounds(topLeft, bottomRight);
+
         const minLng = bounds.getWest();
         const minLat = bounds.getSouth();
         const maxLng = bounds.getEast();
