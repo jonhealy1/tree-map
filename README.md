@@ -1,10 +1,6 @@
 # tree-map
 
-This project was bootstrapped with [Create React App](https://github.com/facebook/create-react-app).
-
-## Available Scripts
-
-In the project directory, you can run:
+![Screenshot Description](assets/trees-screenshot.png)
 
 ### `npm start`
 
