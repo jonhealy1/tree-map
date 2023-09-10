@@ -37,7 +37,7 @@ function MapComponent() {
     const provinceCoordinates = {
         'British Columbia': [-121.9526, 50.9892],
         'Alberta': [-113.8147, 52.2681],
-        'Ontario': [-80.9937, 46.4917],
+        'Ontario': [-80.9937, 44.4917],
     };
 
     const handleProvinceSelect = (selectedOption) => {
