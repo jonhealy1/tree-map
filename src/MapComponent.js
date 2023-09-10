@@ -40,7 +40,7 @@ function MapComponent() {
         const minLat = bounds.getSouth();
         const maxLng = bounds.getEast();
         const maxLat = bounds.getNorth();
-        const returnAll = map.getZoom() > 15 ? 'true' : 'false';  // Check the zoom level here
+        const returnAll = map.getZoom() > 14 ? 'true' : 'false';  // Check the zoom level here
         let url = `https://575qjd8cuk.execute-api.us-east-1.amazonaws.com/prod/trees/search?min_lat=${minLat}&max_lat=${maxLat}&min_lng=${minLng}&max_lng=${maxLng}&limit=8000&return_all=${returnAll}&count=true&count_only=false`;
 
         if (genusTypeRef.current && selectedGenusRef.current) {
@@ -64,7 +64,7 @@ function MapComponent() {
                         'type': 'geojson',
                         'data': fetchedData,
                         'cluster': true,
-                        'clusterMaxZoom': 14, // Max zoom to cluster points
+                        'clusterMaxZoom': 16, // Max zoom to cluster points
                         'clusterRadius': 50 // Radius of each cluster
                     });                    
     
@@ -148,11 +148,7 @@ function MapComponent() {
                                 zoom: zoom
                             });
                         });
-                    });
-
-
-                    
-
+                    });          
                 }
             });
     };
@@ -181,7 +177,7 @@ function MapComponent() {
             });
 
             mapRef.current.on('click', 'points', (e) => {
-                if (mapRef.current.getZoom() > 15) {
+                if (mapRef.current.getZoom() > 14) {
                     const treeData = e.features[0].properties; 
                     console.log(e.features[0]);
                     e.preventDefault();
