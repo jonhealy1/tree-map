@@ -10,11 +10,11 @@
     display: flex;
     flex-direction: column;
     gap: 10px; /* Spacing between logo and selectors */
-    max-width: 340px;
+    max-width: 200px;
 }
 
 .logo-box {
-    background-color: rgba(255, 255, 255, 0.3);
+    background-color: rgba(255, 255, 255, 0.0);
     padding: 0.5px;
     border-radius: 5px;
 }

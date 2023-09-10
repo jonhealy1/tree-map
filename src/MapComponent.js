@@ -3,7 +3,7 @@ import maplibregl from 'maplibre-gl';
 import 'maplibre-gl/dist/maplibre-gl.css';
 import './MapComponent.css'; 
 import Select from 'react-select';
-import logo from './assets/logo-en-black.png'; 
+import logo from './assets/tree-map-high-white.png'; 
 
 function MapComponent() {
     const [data, setData] = useState({});
