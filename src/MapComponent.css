@@ -1,19 +1,27 @@
-.header {
-    position: absolute; /* Position it over the map */
-    top: 10px;
-    left: 10px; /* Adjust to provide some spacing from the left */
+.left-sidebar {
+    position: absolute;
+    background-color: rgba(255, 255, 255, 0.13);
+    top: 10px; /* Adjusted to position from top */
+    left: 10px;
+    padding: 20px;
+    z-index: 1; /* Ensure it stays above the map */
+    border-radius: 15px;
+    box-shadow: 0px 0px 10px rgba(0, 0, 0, 0.3); /* Shadow for better distinction */
     display: flex;
     flex-direction: column;
-    align-items: start;
-    background-color: rgba(255, 255, 255, 0.3); /* Semi-transparent background */
-    padding: 15px;
-    box-shadow: 0px 0px 10px rgba(0, 0, 0, 0.3); /* Optional shadow for better UI distinction */
-    z-index: 1; /* To ensure it floats above the map */
+    gap: 10px; /* Spacing between logo and selectors */
+    max-width: 340px;
+}
+
+.logo-box {
+    background-color: rgba(255, 255, 255, 0.3);
+    padding: 0.5px;
+    border-radius: 5px;
 }
 
 .logo {
-    width: 220px; /* Adjust according to your preference */
-    margin-bottom: 20px;
+    max-width: 100%; /* Adjusted to take the full width of its container */
+    height: auto;
 }
 
 .selection-menus {

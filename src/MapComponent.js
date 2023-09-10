@@ -3,7 +3,7 @@ import maplibregl from 'maplibre-gl';
 import 'maplibre-gl/dist/maplibre-gl.css';
 import './MapComponent.css'; 
 import Select from 'react-select';
-import logo from './assets/cif+png.png'; 
+import logo from './assets/logo-en-black.png'; 
 
 function MapComponent() {
     const [data, setData] = useState({});
@@ -87,6 +87,9 @@ function MapComponent() {
             zoom: 10,
         });
 
+        const nav = new maplibregl.NavigationControl();
+        mapRef.current.addControl(nav, 'bottom-right');
+
         mapRef.current.on('load', () => {
             fetchDataForMap();
             fetch('https://575qjd8cuk.execute-api.us-east-1.amazonaws.com/prod/data/overview')
@@ -97,6 +100,8 @@ function MapComponent() {
             mapRef.current.on('moveend', () => {
                 setZoomLevel(mapRef.current.getZoom().toFixed(2));
             });
+
+
 
             mapRef.current.on('click', 'points', (e) => {
                 if (mapRef.current.getZoom() > 16) {
@@ -126,32 +131,34 @@ function MapComponent() {
 
     return (
         <div style={{ position: 'relative', height: '100vh' }}>
-            {/* Left sidebar with logo and genus selectors */}
-            <div className="left-sidebar"> 
-                <div className="header">
-                    <img src={logo} alt="Logo" className="logo" />
-                    
-                    <div className="selection-menus">
-                        <Select
-                            options={options}
-                            onChange={(selectedOption) => setGenusType(selectedOption)}
-                            placeholder="Select a genus type..."
-                            isSearchable
-                        />
-                        <Select
-                            options={genusOptions}
-                            onChange={(selectedOption) => setSelectedGenus(selectedOption.value)}
-                            placeholder={`Select a ${genusType ? genusType.label : ''}...`}
-                            isSearchable
-                            isDisabled={!genusType}
-                        />
-                    </div>
+            <div className="left-sidebar">
+            {/* Logo Box */}
+            <div className="logo-box">
+                <img src={logo} alt="Logo" className="logo" />
+            </div>
+            
+            {/* Genus Selectors */}
+            
+                <div className="selection-menus">
+                    <Select
+                        options={options}
+                        onChange={(selectedOption) => setGenusType(selectedOption)}
+                        placeholder="Select a genus type..."
+                        isSearchable
+                    />
+                    <Select
+                        options={genusOptions}
+                        onChange={(selectedOption) => setSelectedGenus(selectedOption.value)}
+                        placeholder={`Select a ${genusType ? genusType.label : ''}...`}
+                        isSearchable
+                        isDisabled={!genusType}
+                    />
                 </div>
             </div>
             
             {/* Main map area */}
             <div id="map" style={{ width: '100%', height: '100%' }}></div>
-    
+        
             {/* Map style selector */}
             <Select
                 options={mapStyles}
@@ -164,7 +171,7 @@ function MapComponent() {
                 isSearchable={false}
                 className="map-style-selector"
             />
-    
+        
             {/* Info box at the bottom left */}
             <div style={{
                 position: 'absolute',
@@ -187,6 +194,7 @@ function MapComponent() {
             </div>
         </div>
     );
+    
     
 }
 
