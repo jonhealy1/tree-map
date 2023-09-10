@@ -203,7 +203,7 @@ function MapComponent() {
                     });
                 });
             });
-            
+
             // Add cursor styling for clusters
             mapRef.current.on('mouseenter', 'clusters', function () {
                 mapRef.current.getCanvas().style.cursor = 'pointer';
