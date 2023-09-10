@@ -204,24 +204,6 @@ function MapComponent() {
                 });
             });
             
-
-            // Add clusters click handler
-            mapRef.current.on('click', 'clusters-layer-id', function (e) {
-                var features = mapRef.current.queryRenderedFeatures(e.point, {
-                    layers: ['clusters-layer-id']
-                });
-
-                var clusterId = features[0].properties.cluster_id;
-                mapRef.current.getSource('trees').getClusterExpansionZoom(clusterId, function (err, zoom) {
-                    if (err) return;
-
-                    mapRef.current.easeTo({
-                        center: features[0].geometry.coordinates,
-                        zoom: zoom
-                    });
-                });
-            });
-
             // Add cursor styling for clusters
             mapRef.current.on('mouseenter', 'clusters', function () {
                 mapRef.current.getCanvas().style.cursor = 'pointer';
