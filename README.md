@@ -1,6 +1,6 @@
 # tree-map
 
-![Screenshot Description](assets/trees-screenshot.png)
+![Screenshot Description](src/assets/trees-screenshot.png)
 
 ### `npm start`
 
