@@ -40,8 +40,8 @@ function MapComponent() {
         const minLat = bounds.getSouth();
         const maxLng = bounds.getEast();
         const maxLat = bounds.getNorth();
-        const returnAll = map.getZoom() > 16 ? 'true' : 'false';  // Check the zoom level here
-        let url = `https://575qjd8cuk.execute-api.us-east-1.amazonaws.com/prod/trees/search?min_lat=${minLat}&max_lat=${maxLat}&min_lng=${minLng}&max_lng=${maxLng}&limit=10000&return_all=${returnAll}&count=true&count_only=false`;
+        const returnAll = map.getZoom() > 15 ? 'true' : 'false';  // Check the zoom level here
+        let url = `https://575qjd8cuk.execute-api.us-east-1.amazonaws.com/prod/trees/search?min_lat=${minLat}&max_lat=${maxLat}&min_lng=${minLng}&max_lng=${maxLng}&limit=8000&return_all=${returnAll}&count=true&count_only=false`;
 
         if (genusTypeRef.current && selectedGenusRef.current) {
             url += `&${genusTypeRef.current.value}=${selectedGenusRef.current}`;
@@ -62,8 +62,11 @@ function MapComponent() {
                 } else {
                     map.addSource('points', {
                         'type': 'geojson',
-                        'data': fetchedData
-                    });
+                        'data': fetchedData,
+                        'cluster': true,
+                        'clusterMaxZoom': 14, // Max zoom to cluster points
+                        'clusterRadius': 50 // Radius of each cluster
+                    });                    
     
                     map.addLayer({
                         'id': 'points',
@@ -74,6 +77,82 @@ function MapComponent() {
                             'circle-color': '#000000'
                         }
                     });
+
+                    // Display clusters by circle layer
+                    map.addLayer({
+                        id: 'clusters',
+                        type: 'circle',
+                        source: 'points',
+                        filter: ['has', 'point_count'],
+                        paint: {
+                            'circle-color': [
+                                'step',
+                                ['get', 'point_count'],
+                                '#51bbd6',
+                                100,
+                                '#f1f075',
+                                750,
+                                '#f28cb1'
+                            ],
+                            'circle-radius': [
+                                'step',
+                                ['get', 'point_count'],
+                                20,
+                                100,
+                                30,
+                                750,
+                                40
+                            ]
+                        }
+                    });
+
+                    // Display the number of points in each cluster
+                    map.addLayer({
+                        id: 'cluster-count',
+                        type: 'symbol',
+                        source: 'points',
+                        filter: ['has', 'point_count'],
+                        layout: {
+                            'text-field': '{point_count_abbreviated}',
+                            'text-font': ['DIN Offc Pro Medium', 'Arial Unicode MS Bold'],
+                            'text-size': 12
+                        }
+                    });
+
+                    // Display points that aren't part of a cluster
+                    map.addLayer({
+                        id: 'unclustered-points',
+                        type: 'circle',
+                        source: 'points',
+                        filter: ['!', ['has', 'point_count']],
+                        paint: {
+                            'circle-color': '#000000',
+                            'circle-radius': 4,
+                            'circle-stroke-width': 1,
+                            'circle-stroke-color': '#fff'
+                        }
+                    });
+
+                    // After you've added the layers...
+
+                    map.on('click', 'clusters', function (e) {
+                        const features = map.queryRenderedFeatures(e.point, {
+                            layers: ['clusters']
+                        });
+                        const clusterId = features[0].properties.cluster_id;
+                        map.getSource('points').getClusterExpansionZoom(clusterId, function (err, zoom) {
+                            if (err) return;
+
+                            map.flyTo({
+                                center: features[0].geometry.coordinates,
+                                zoom: zoom
+                            });
+                        });
+                    });
+
+
+                    
+
                 }
             });
     };
@@ -101,16 +180,57 @@ function MapComponent() {
                 setZoomLevel(mapRef.current.getZoom().toFixed(2));
             });
 
-
-
             mapRef.current.on('click', 'points', (e) => {
-                if (mapRef.current.getZoom() > 16) {
+                if (mapRef.current.getZoom() > 15) {
                     const treeData = e.features[0].properties; 
                     console.log(e.features[0]);
                     e.preventDefault();
                     setSelectedTree(treeData);
                 }
             });
+
+            mapRef.current.on('click', 'clusters', function (e) {
+                const features = mapRef.current.queryRenderedFeatures(e.point, {
+                    layers: ['clusters']
+                });
+                const clusterId = features[0].properties.cluster_id;
+                mapRef.current.getSource('points').getClusterExpansionZoom(clusterId, function (err, zoom) {
+                    if (err) return;
+            
+                    mapRef.current.flyTo({
+                        center: features[0].geometry.coordinates,
+                        zoom: zoom
+                    });
+                });
+            });
+            
+
+            // Add clusters click handler
+            mapRef.current.on('click', 'clusters-layer-id', function (e) {
+                var features = mapRef.current.queryRenderedFeatures(e.point, {
+                    layers: ['clusters-layer-id']
+                });
+
+                var clusterId = features[0].properties.cluster_id;
+                mapRef.current.getSource('trees').getClusterExpansionZoom(clusterId, function (err, zoom) {
+                    if (err) return;
+
+                    mapRef.current.easeTo({
+                        center: features[0].geometry.coordinates,
+                        zoom: zoom
+                    });
+                });
+            });
+
+            // Add cursor styling for clusters
+            mapRef.current.on('mouseenter', 'clusters', function () {
+                mapRef.current.getCanvas().style.cursor = 'pointer';
+            });
+            
+            mapRef.current.on('mouseleave', 'clusters', function () {
+                mapRef.current.getCanvas().style.cursor = '';
+            });
+
         });
 
         mapRef.current.on('moveend', fetchDataForMap);
@@ -127,7 +247,9 @@ function MapComponent() {
         { value: 'common_genus', label: 'Common Genus', key: 'common_genus' }
     ];
 
-    const genusOptions = genusType ? data[genusType.key].filter(name => name && name.trim() !== '').map(name => ({ value: name, label: name })) : [];
+    const genusOptions = genusType && data[genusType.key] 
+        ? data[genusType.key].filter(name => name && name.trim() !== '').map(name => ({ value: name, label: name }))
+        : [];
 
     return (
         <div style={{ position: 'relative', height: '100vh' }}>
