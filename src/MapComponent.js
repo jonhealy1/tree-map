@@ -7,8 +7,8 @@ import logo from './assets/tree-map-high-white.png';
 
 function MapComponent() {
     const [data, setData] = useState({});
-    const [genusType, setGenusType] = useState(null);
-    const [selectedGenus, setSelectedGenus] = useState(null);
+    const [genusType, setGenusType] = useState({ value: 'botanical_genus', label: 'Botanical Genus', key: 'botanical_name_genus' });
+    const [selectedGenus, setSelectedGenus] = useState("Aesculus");
     const [selectedTree, setSelectedTree] = useState(null);
     const [info, setInfo] = useState({ count: 0 });
     const [zoomLevel, setZoomLevel] = useState(10);
@@ -38,9 +38,9 @@ function MapComponent() {
     const provinceCoordinates = {
         'British Columbia': [-121.9526, 50.9892],
         'Alberta': [-113.8147, 52.2681],
-        'Ontario': [-80.9937, 44.4917],
+        'Ontario': [-78.9937, 44.4917],
     };
-    const MARGIN = 100;
+    const MARGIN = 80;
 
     const handleProvinceSelect = (selectedOption) => {
         const coords = provinceCoordinates[selectedOption.value];
@@ -189,7 +189,7 @@ function MapComponent() {
             container: 'map',
             style: 'https://api.maptiler.com/maps/outdoor/style.json?key=6jk9aonLicRFoRqvljrc',
             center: [-123.1216, 49.2827],
-            zoom: 10,
+            zoom: 11,
         });
 
         const nav = new maplibregl.NavigationControl();
@@ -207,28 +207,53 @@ function MapComponent() {
             });
 
             mapRef.current.on('click', 'points', (e) => {
-                if (mapRef.current.getZoom() > 15) {
-                    const treeData = e.features[0].properties; 
-                    console.log(e.features[0]);
-                    e.preventDefault();
+                const clickedFeature = e.features[0];
+                
+                // Check if the clicked feature is a cluster
+                if (clickedFeature.properties.cluster) {
+                    const clusterId = clickedFeature.properties.cluster_id;
+                    mapRef.current.getSource('points').getClusterExpansionZoom(clusterId, function (err, zoom) {
+                        if (err) return;
+                        
+                        mapRef.current.flyTo({
+                            center: clickedFeature.geometry.coordinates,
+                            zoom: zoom
+                        });
+                    });
+                } 
+                // If it's not a cluster and the zoom level is greater than 15, it's an individual tree
+                else if (mapRef.current.getZoom() > 15) {
+                    const treeData = clickedFeature.properties;
                     setSelectedTree(treeData);
                 }
             });
-
-            mapRef.current.on('click', 'clusters', function (e) {
-                const features = mapRef.current.queryRenderedFeatures(e.point, {
-                    layers: ['clusters']
-                });
-                const clusterId = features[0].properties.cluster_id;
-                mapRef.current.getSource('points').getClusterExpansionZoom(clusterId, function (err, zoom) {
-                    if (err) return;
             
-                    mapRef.current.flyTo({
-                        center: features[0].geometry.coordinates,
-                        zoom: zoom
-                    });
-                });
-            });
+
+
+
+            // mapRef.current.on('click', 'points', (e) => {
+            //     if (mapRef.current.getZoom() > 15) {
+            //         const treeData = e.features[0].properties; 
+            //         console.log(e.features[0]);
+            //         e.preventDefault();
+            //         setSelectedTree(treeData);
+            //     }
+            // });
+
+            // mapRef.current.on('click', 'clusters', function (e) {
+            //     const features = mapRef.current.queryRenderedFeatures(e.point, {
+            //         layers: ['clusters']
+            //     });
+            //     const clusterId = features[0].properties.cluster_id;
+            //     mapRef.current.getSource('points').getClusterExpansionZoom(clusterId, function (err, zoom) {
+            //         if (err) return;
+            
+            //         mapRef.current.flyTo({
+            //             center: features[0].geometry.coordinates,
+            //             zoom: zoom
+            //         });
+            //     });
+            // });
 
             // Add cursor styling for clusters
             mapRef.current.on('mouseenter', 'clusters', function () {
@@ -256,8 +281,11 @@ function MapComponent() {
     ];
 
     const genusOptions = genusType && data[genusType.key] 
-        ? data[genusType.key].filter(name => name && name.trim() !== '').map(name => ({ value: name, label: name }))
+        ? data[genusType.key]
+            .filter(name => name && name.trim() !== '' && !name.trim().match(/^['"]/))
+            .map(name => ({ value: name, label: name }))
         : [];
+
 
     return (
         <div style={{ position: 'relative', height: '100vh' }}>
@@ -273,12 +301,14 @@ function MapComponent() {
                     <Select
                         options={options}
                         onChange={(selectedOption) => setGenusType(selectedOption)}
+                        defaultValue={genusType}
                         placeholder="Select a genus type..."
                         isSearchable
                     />
                     <Select
                         options={genusOptions}
                         onChange={(selectedOption) => setSelectedGenus(selectedOption.value)}
+                        defaultValue={{ value: selectedGenus, label: selectedGenus }}
                         placeholder={`Select a ${genusType ? genusType.label : ''}...`}
                         isSearchable
                         isDisabled={!genusType}
