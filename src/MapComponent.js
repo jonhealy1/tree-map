@@ -1,4 +1,4 @@
-import React, { useEffect, useState, useRef } from 'react';
+import React, { useEffect, useState, useRef, useCallback } from 'react';
 import maplibregl from 'maplibre-gl';
 import 'maplibre-gl/dist/maplibre-gl.css';
 import './MapComponent.css'; 
@@ -47,142 +47,130 @@ function MapComponent() {
         if (coords && mapRef.current) {
             mapRef.current.flyTo({
                 center: coords,
-                zoom: 5.8 // Adjust zoom level as needed
+                zoom: 5.8
             });
         }
     };
-    
-    useEffect(() => {
-        selectedGenusRef.current = selectedGenus;
-        genusTypeRef.current = genusType;
-    }, [selectedGenus, genusType]);
 
-    const fetchDataForMap = () => {
+    const addSourcesAndLayers = useCallback((fetchedData) => {
+        const map = mapRef.current;
+        if (!map) return;
+
+        const zoom = map.getZoom();
+        const circleSize = zoom < 5 ? 3 : zoom < 12 ? 7 : 9;
+
+        if (map.getSource('points')) {
+            map.getSource('points').setData(fetchedData);
+        } else {
+            map.addSource('points', {
+                'type': 'geojson',
+                'data': fetchedData,
+                'cluster': true,
+                'clusterMaxZoom': 16,
+                'clusterRadius': 50
+            });
+
+            map.addLayer({
+                'id': 'points',
+                'type': 'circle',
+                'source': 'points',
+                'paint': {
+                    'circle-radius': circleSize,
+                    'circle-color': '#000000'
+                }
+            });
+
+            map.addLayer({
+                id: 'clusters',
+                type: 'circle',
+                source: 'points',
+                filter: ['has', 'point_count'],
+                paint: {
+                    'circle-color': [
+                        'step',
+                        ['get', 'point_count'],
+                        '#51bbd6',
+                        100,
+                        '#f1f075',
+                        750,
+                        '#f28cb1'
+                    ],
+                    'circle-radius': [
+                        'step',
+                        ['get', 'point_count'],
+                        20,
+                        100,
+                        30,
+                        750,
+                        40
+                    ]
+                }
+            });
+
+            map.addLayer({
+                id: 'cluster-count',
+                type: 'symbol',
+                source: 'points',
+                filter: ['has', 'point_count'],
+                layout: {
+                    'text-field': '{point_count_abbreviated}',
+                    'text-font': ['DIN Offc Pro Medium', 'Arial Unicode MS Bold'],
+                    'text-size': 12
+                }
+            });
+
+            map.addLayer({
+                id: 'unclustered-points',
+                type: 'circle',
+                source: 'points',
+                filter: ['!', ['has', 'point_count']],
+                paint: {
+                    'circle-color': '#000000',
+                    'circle-radius': 4,
+                    'circle-stroke-width': 1,
+                    'circle-stroke-color': '#fff'
+                }
+            });
+            map.on('click', 'clusters', function (e) {
+                const features = map.queryRenderedFeatures(e.point, {
+                    layers: ['clusters']
+                });
+                const clusterId = features[0].properties.cluster_id;
+                map.getSource('points').getClusterExpansionZoom(clusterId, function (err, zoom) {
+                    if (err) return;
+
+                    map.flyTo({
+                        center: features[0].geometry.coordinates,
+                        zoom: zoom
+                    });
+                });
+            });   
+        }
+    }, [mapRef]);
+
+    const fetchDataForMap = useCallback(() => {
         if (!mapRef.current) return;
-    
         const map = mapRef.current;
         const topLeft = map.unproject([MARGIN, MARGIN]);
         const bottomRight = map.unproject([map.getContainer().clientWidth - MARGIN, map.getContainer().clientHeight - MARGIN]);
-
         const bounds = new maplibregl.LngLatBounds(topLeft, bottomRight);
-
         const minLng = bounds.getWest();
         const minLat = bounds.getSouth();
         const maxLng = bounds.getEast();
         const maxLat = bounds.getNorth();
-        const returnAll = map.getZoom() > 15 ? 'true' : 'false';  // Check the zoom level here
+        const returnAll = map.getZoom() > 13 ? 'true' : 'false';  
         let url = `https://575qjd8cuk.execute-api.us-east-1.amazonaws.com/prod/trees/search?min_lat=${minLat}&max_lat=${maxLat}&min_lng=${minLng}&max_lng=${maxLng}&limit=10000&return_all=${returnAll}&count=true&count_only=false`;
 
         if (genusTypeRef.current && selectedGenusRef.current) {
             url += `&${genusTypeRef.current.value}=${selectedGenusRef.current}`;
         }
-    
         fetch(url)
             .then(response => response.json())
             .then(fetchedData => {
                 setInfo({ count: fetchedData.count });
-                if (!map.isStyleLoaded()) return; // Ensure the map's style is loaded
-    
-                // Adjust circle size based on zoom level
-                const zoom = map.getZoom();
-                const circleSize = zoom < 5 ? 3 : zoom < 12 ? 7 : 9;
-                
-                if (map.getSource('points')) {
-                    map.getSource('points').setData(fetchedData);
-                } else {
-                    map.addSource('points', {
-                        'type': 'geojson',
-                        'data': fetchedData,
-                        'cluster': true,
-                        'clusterMaxZoom': 16, // Max zoom to cluster points
-                        'clusterRadius': 50 // Radius of each cluster
-                    });                    
-    
-                    map.addLayer({
-                        'id': 'points',
-                        'type': 'circle',
-                        'source': 'points',
-                        'paint': {
-                            'circle-radius': circleSize,
-                            'circle-color': '#000000'
-                        }
-                    });
-
-                    // Display clusters by circle layer
-                    map.addLayer({
-                        id: 'clusters',
-                        type: 'circle',
-                        source: 'points',
-                        filter: ['has', 'point_count'],
-                        paint: {
-                            'circle-color': [
-                                'step',
-                                ['get', 'point_count'],
-                                '#51bbd6',
-                                100,
-                                '#f1f075',
-                                750,
-                                '#f28cb1'
-                            ],
-                            'circle-radius': [
-                                'step',
-                                ['get', 'point_count'],
-                                20,
-                                100,
-                                30,
-                                750,
-                                40
-                            ]
-                        }
-                    });
-
-                    // Display the number of points in each cluster
-                    map.addLayer({
-                        id: 'cluster-count',
-                        type: 'symbol',
-                        source: 'points',
-                        filter: ['has', 'point_count'],
-                        layout: {
-                            'text-field': '{point_count_abbreviated}',
-                            'text-font': ['DIN Offc Pro Medium', 'Arial Unicode MS Bold'],
-                            'text-size': 12
-                        }
-                    });
-
-                    // Display points that aren't part of a cluster
-                    map.addLayer({
-                        id: 'unclustered-points',
-                        type: 'circle',
-                        source: 'points',
-                        filter: ['!', ['has', 'point_count']],
-                        paint: {
-                            'circle-color': '#000000',
-                            'circle-radius': 4,
-                            'circle-stroke-width': 1,
-                            'circle-stroke-color': '#fff'
-                        }
-                    });
-
-                    // After you've added the layers...
-
-                    map.on('click', 'clusters', function (e) {
-                        const features = map.queryRenderedFeatures(e.point, {
-                            layers: ['clusters']
-                        });
-                        const clusterId = features[0].properties.cluster_id;
-                        map.getSource('points').getClusterExpansionZoom(clusterId, function (err, zoom) {
-                            if (err) return;
-
-                            map.flyTo({
-                                center: features[0].geometry.coordinates,
-                                zoom: zoom
-                            });
-                        });
-                    });          
-                }
+                addSourcesAndLayers(fetchedData);
             });
-    };
-    
+    }, [mapRef, genusTypeRef, selectedGenusRef, addSourcesAndLayers]);
 
     useEffect(() => {
         mapRef.current = new maplibregl.Map({
@@ -197,19 +185,17 @@ function MapComponent() {
 
         mapRef.current.on('load', () => {
             fetchDataForMap();
+
             fetch('https://575qjd8cuk.execute-api.us-east-1.amazonaws.com/prod/data/overview')
                 .then(response => response.json())
                 .then(overviewData => setData(overviewData));
 
-            // Update zoom level state when the map moves
             mapRef.current.on('moveend', () => {
                 setZoomLevel(mapRef.current.getZoom().toFixed(2));
             });
 
             mapRef.current.on('click', 'points', (e) => {
                 const clickedFeature = e.features[0];
-                
-                // Check if the clicked feature is a cluster
                 if (clickedFeature.properties.cluster) {
                     const clusterId = clickedFeature.properties.cluster_id;
                     mapRef.current.getSource('points').getClusterExpansionZoom(clusterId, function (err, zoom) {
@@ -220,60 +206,29 @@ function MapComponent() {
                             zoom: zoom
                         });
                     });
-                } 
-                // If it's not a cluster and the zoom level is greater than 15, it's an individual tree
-                else if (mapRef.current.getZoom() > 15) {
+                } else if (mapRef.current.getZoom() > 13) {
                     const treeData = clickedFeature.properties;
                     setSelectedTree(treeData);
                 }
             });
-            
 
-
-
-            // mapRef.current.on('click', 'points', (e) => {
-            //     if (mapRef.current.getZoom() > 15) {
-            //         const treeData = e.features[0].properties; 
-            //         console.log(e.features[0]);
-            //         e.preventDefault();
-            //         setSelectedTree(treeData);
-            //     }
-            // });
-
-            // mapRef.current.on('click', 'clusters', function (e) {
-            //     const features = mapRef.current.queryRenderedFeatures(e.point, {
-            //         layers: ['clusters']
-            //     });
-            //     const clusterId = features[0].properties.cluster_id;
-            //     mapRef.current.getSource('points').getClusterExpansionZoom(clusterId, function (err, zoom) {
-            //         if (err) return;
-            
-            //         mapRef.current.flyTo({
-            //             center: features[0].geometry.coordinates,
-            //             zoom: zoom
-            //         });
-            //     });
-            // });
-
-            // Add cursor styling for clusters
             mapRef.current.on('mouseenter', 'clusters', function () {
                 mapRef.current.getCanvas().style.cursor = 'pointer';
             });
-            
+
             mapRef.current.on('mouseleave', 'clusters', function () {
                 mapRef.current.getCanvas().style.cursor = '';
             });
-
         });
 
         mapRef.current.on('moveend', fetchDataForMap);
-
+        mapRef.current.on('styledata', fetchDataForMap);
         return () => mapRef.current.remove();
-    }, []); 
+    }, [fetchDataForMap]);
 
     useEffect(() => {
         fetchDataForMap();
-    }, [genusType, selectedGenus]);
+    }, [genusType, selectedGenus, fetchDataForMap]);
 
     const options = [
         { value: 'botanical_genus', label: 'Botanical Genus', key: 'botanical_name_genus' },
@@ -286,46 +241,39 @@ function MapComponent() {
             .map(name => ({ value: name, label: name }))
         : [];
 
-
     return (
         <div style={{ position: 'relative', height: '100vh' }}>
             <div className="left-sidebar">
-            {/* Logo Box */}
             <div className="logo-box">
                 <img src={logo} alt="Logo" className="logo" />
             </div>
-            
-            {/* Genus Selectors */}
-            
-                <div className="selection-menus">
-                    <Select
-                        options={options}
-                        onChange={(selectedOption) => setGenusType(selectedOption)}
-                        defaultValue={genusType}
-                        placeholder="Select a genus type..."
-                        isSearchable
-                    />
-                    <Select
-                        options={genusOptions}
-                        onChange={(selectedOption) => setSelectedGenus(selectedOption.value)}
-                        defaultValue={{ value: selectedGenus, label: selectedGenus }}
-                        placeholder={`Select a ${genusType ? genusType.label : ''}...`}
-                        isSearchable
-                        isDisabled={!genusType}
-                    />
-                    {/* Province Selector */}
-                    <Select
-                        options={provinces}
-                        onChange={handleProvinceSelect}
-                        placeholder="Select a province..."
-                    />
-                </div>
+
+            <div className="selection-menus">
+                <Select
+                    options={options}
+                    onChange={(selectedOption) => setGenusType(selectedOption)}
+                    defaultValue={genusType}
+                    placeholder="Select a genus type..."
+                    isSearchable
+                />
+                <Select
+                    options={genusOptions}
+                    onChange={(selectedOption) => setSelectedGenus(selectedOption.value)}
+                    defaultValue={{ value: selectedGenus, label: selectedGenus }}
+                    placeholder={`Select a ${genusType ? genusType.label : ''}...`}
+                    isSearchable
+                    isDisabled={!genusType}
+                />
+                <Select
+                    options={provinces}
+                    onChange={handleProvinceSelect}
+                    placeholder="Select a province..."
+                />
             </div>
-            
-            {/* Main map area */}
+            </div>
+
             <div id="map" style={{ width: '100%', height: '100%' }}></div>
-        
-            {/* Map style selector */}
+
             <Select
                 options={mapStyles}
                 defaultValue={mapStyles[0]}
@@ -337,8 +285,7 @@ function MapComponent() {
                 isSearchable={false}
                 className="map-style-selector"
             />
-        
-            {/* Info box at the bottom left */}
+
             <div style={{
                 position: 'absolute',
                 bottom: '10px',
@@ -360,8 +307,6 @@ function MapComponent() {
             </div>
         </div>
     );
-    
-    
 }
 
 export default MapComponent;
