@@ -389,24 +389,15 @@ function MapComponent() {
                 isSearchable={false}
                 className="map-style-selector"
             />
-        
+            <div className="info-box">
             {/* Info box at the bottom left */}
-            <div style={{
-                position: 'absolute',
-                bottom: '10px',
-                left: '10px',
-                backgroundColor: 'rgba(255, 255, 255, 0.5)',
-                padding: '5px',
-                borderRadius: '3px',
-                boxShadow: '0px 0px 10px rgba(0, 0, 0, 0.3)'
-            }}>
                 <p><strong>Count:</strong> {info.count}</p>
-                <p><strong>Zoom Level:</strong> {zoomLevel}</p>
+                <p><strong>Zoom:</strong> {zoomLevel}</p>
                 {selectedTree && (
                     <div>
-                        <p><strong>Tree Id:</strong> {selectedTree.Id}</p> 
+                        {/* <p><strong>Tree Id:</strong> {selectedTree.Id}</p> 
                         <p><strong>Address:</strong> {selectedTree.Address}</p>
-                        <p><strong>DBH (CM):</strong> {selectedTree['DBH (DHP) (CM)']}</p>
+                        <p><strong>DBH (CM):</strong> {selectedTree['DBH (DHP) (CM)']}</p> */}
                         <p><strong>Common Species:</strong> {selectedTree['Common Species']}</p>
                         <p><strong>Botanical Species:</strong> {selectedTree['Botanical Name Species']}</p>
                     </div>
