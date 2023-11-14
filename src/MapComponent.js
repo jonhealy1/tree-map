@@ -10,11 +10,14 @@ function MapComponent() {
     const [genusType, setGenusType] = useState(null);
     const [selectedGenus, setSelectedGenus] = useState(null);
     const [selectedTree, setSelectedTree] = useState(null);
+    const [speciesType, setSpeciesType] = useState(null);
+    const [selectedSpecies, setSelectedSpecies] = useState(null);
     const [info, setInfo] = useState({ count: 0 });
     const [zoomLevel, setZoomLevel] = useState(10);
     const mapRef = useRef(null);
     const selectedGenusRef = useRef(selectedGenus);
     const genusTypeRef = useRef(genusType);
+    const selectedSpeciesRef = useRef(selectedSpecies);
     const mapStyles = [
         { value: 'https://api.maptiler.com/maps/outdoor/style.json?key=6jk9aonLicRFoRqvljrc', label: 'Outdoor' },
         { value: 'https://api.maptiler.com/maps/streets/style.json?key=6jk9aonLicRFoRqvljrc', label: 'Streets' },
@@ -44,6 +47,20 @@ function MapComponent() {
         'Ontario': [-80.9937, 44.4917],
         "Quebec": [-71.2002, 46.8129],
     };
+
+    const hardcodedSpecies = {
+        'Acer': [
+            { value: 'Acer pseudoplatanus', label: 'Acer pseudoplatanus' },
+            { value: 'Acer platanoides', label: 'Acer platanoides' },
+            // Add more species as needed
+        ],
+        'Maple': [
+            { value: 'Red maple', label: 'Red Maple' },
+            { value: 'Sugar maple', label: 'Sugar Maple' },
+            // Add more species as needed
+        ],
+    };
+
     const MARGIN = 100;
 
     const handleProvinceSelect = (selectedOption) => {
@@ -59,7 +76,8 @@ function MapComponent() {
     useEffect(() => {
         selectedGenusRef.current = selectedGenus;
         genusTypeRef.current = genusType;
-    }, [selectedGenus, genusType]);
+        selectedSpeciesRef.current = selectedSpecies;
+    }, [selectedGenus, genusType, selectedSpecies]);
 
     const fetchDataForMap = () => {
         if (!mapRef.current) return;
@@ -75,11 +93,18 @@ function MapComponent() {
         const maxLng = bounds.getEast();
         const maxLat = bounds.getNorth();
         const returnAll = map.getZoom() > 15 ? 'true' : 'false';  // Check the zoom level here
+        
         let url = `https://575qjd8cuk.execute-api.us-east-1.amazonaws.com/prod/trees/search?min_lat=${minLat}&max_lat=${maxLat}&min_lng=${minLng}&max_lng=${maxLng}&limit=10000&return_all=${returnAll}&count=true&count_only=false`;
 
         if (genusTypeRef.current && selectedGenusRef.current) {
             url += `&${genusTypeRef.current.value}=${selectedGenusRef.current}`;
         }
+
+        if (selectedSpeciesRef.current) { // Add this check for selected species
+            url += `&${genusTypeRef.current.value === 'botanical_genus' ? 'botanical_species' : 'common_species'}=${encodeURIComponent(selectedSpeciesRef.current)}`;
+        }
+
+        console.log(url);
     
         fetch(url)
             .then(response => response.json())
@@ -186,7 +211,42 @@ function MapComponent() {
                 }
             });
     };
+
+    const onGenusTypeChange = (selectedOption) => {
+        setGenusType(selectedOption);
+        setSelectedGenus(null);
+        setSelectedSpecies(null);
+        setSpeciesType(null);
+    };
     
+    // const onGenusChange = (selectedOption) => {
+    //     setSelectedGenus(selectedOption.value);
+    //     setSelectedSpecies(null);
+    //     setSpeciesType(genusType); // This line might need adjustment based on your API structure
+
+    //     // Check if the selected genus is "Acer" or "Maple" and set hardcoded species
+    //     if (selectedOption.value === 'Acer' || selectedOption.value === 'Maple') {
+    //         setData(prevData => ({
+    //             ...prevData,
+    //             'species': hardcodedSpecies[selectedOption.value]
+    //         }));
+    //     } else {
+    //         // Fetch species for other genera
+    //         // Your existing code for fetching species from API can be placed here
+    //     }
+    // };
+
+    const onGenusChange = (selectedOption) => {
+        setSelectedGenus(selectedOption.value);
+        setSelectedSpecies(null);
+        setSpeciesType(genusType); // This line might need adjustment based on your API structure
+    
+        // Always use hardcoded species for now
+        setData(prevData => ({
+            ...prevData,
+            'species': hardcodedSpecies[selectedOption.value] || []
+        }));
+    };
 
     useEffect(() => {
         mapRef.current = new maplibregl.Map({
@@ -252,7 +312,7 @@ function MapComponent() {
 
     useEffect(() => {
         fetchDataForMap();
-    }, [genusType, selectedGenus]);
+    }, [genusType, selectedGenus, selectedSpecies]);
 
     const options = [
         { value: 'botanical_genus', label: 'Botanical Genus', key: 'botanical_name_genus' },
@@ -262,6 +322,16 @@ function MapComponent() {
     const genusOptions = genusType && data[genusType.key] 
         ? data[genusType.key].filter(name => name && name.trim() !== '').map(name => ({ value: name, label: name }))
         : [];
+
+    const speciesOptions = selectedGenus && data['species']
+        ? data['species']
+        : [];
+
+    // const speciesOptions = [
+    //     { value: 'species1', label: 'Species 1' },
+    //     { value: 'species2', label: 'Species 2' },
+    //     { value: 'species3', label: 'Species 3' },
+    // ];
 
     return (
         <div style={{ position: 'relative', height: '100vh' }}>
@@ -276,17 +346,25 @@ function MapComponent() {
                 <div className="selection-menus">
                     <Select
                         options={options}
-                        onChange={(selectedOption) => setGenusType(selectedOption)}
+                        onChange={onGenusTypeChange}
                         placeholder="Select a genus type..."
                         isSearchable
                     />
                     <Select
                         options={genusOptions}
-                        onChange={(selectedOption) => setSelectedGenus(selectedOption.value)}
-                        placeholder={`Select a ${genusType ? genusType.label : ''}...`}
+                        onChange={onGenusChange}
+                        placeholder="Select a genus..."
                         isSearchable
                         isDisabled={!genusType}
                     />
+                    <Select
+                        options={speciesOptions}
+                        onChange={(selectedOption) => setSelectedSpecies(selectedOption.value)}
+                        placeholder="Select a species..."
+                        isSearchable
+                        isDisabled={!selectedGenus}
+                    />
+
                     {/* Province Selector */}
                     <Select
                         options={provinces}
@@ -329,6 +407,8 @@ function MapComponent() {
                         <p><strong>Tree Id:</strong> {selectedTree.Id}</p> 
                         <p><strong>Address:</strong> {selectedTree.Address}</p>
                         <p><strong>DBH (CM):</strong> {selectedTree['DBH (DHP) (CM)']}</p>
+                        <p><strong>Common Species:</strong> {selectedTree['Common Species']}</p>
+                        <p><strong>Botanical Species:</strong> {selectedTree['Botanical Name Species']}</p>
                     </div>
                 )}
             </div>
