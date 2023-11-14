@@ -30,15 +30,19 @@ function MapComponent() {
         { value: 'https://api.maptiler.com/maps/backdrop/style.json?key=6jk9aonLicRFoRqvljrc', label: 'Backdrop' }
     ];
     const provinces = [
-        { value: 'British Columbia', label: 'British Columbia' },
         { value: 'Alberta', label: 'Alberta' },
+        { value: 'British Columbia', label: 'British Columbia' },
+        { value: 'Nova Scotia', label: 'Nova Scotia' },
         { value: 'Ontario', label: 'Ontario' },
+        { value: 'Quebec', label: 'Quebec' },
     ];
 
     const provinceCoordinates = {
-        'British Columbia': [-121.9526, 50.9892],
         'Alberta': [-113.8147, 52.2681],
+        'British Columbia': [-121.9526, 50.9892],
+        'Nova Scotia': [-63.57, 44.65],
         'Ontario': [-80.9937, 44.4917],
+        "Quebec": [-71.2002, 46.8129],
     };
     const MARGIN = 100;
 
