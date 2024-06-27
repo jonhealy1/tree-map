@@ -11,7 +11,7 @@ function MapComponent() {
     const [selectedGenus, setSelectedGenus] = useState(null);
     const [selectedTree, setSelectedTree] = useState(null);
     const [info, setInfo] = useState({ count: 0 });
-    const [zoomLevel, setZoomLevel] = useState(10);
+    const [zoomLevel, setZoomLevel] = useState(11);
     const mapRef = useRef(null);
     const selectedGenusRef = useRef(selectedGenus);
     const genusTypeRef = useRef(genusType);
@@ -51,7 +51,7 @@ function MapComponent() {
         if (coords && mapRef.current) {
             mapRef.current.flyTo({
                 center: coords,
-                zoom: 5.8 // Adjust zoom level as needed
+                zoom: 6 // Adjust zoom level as needed
             });
         }
     };
@@ -75,8 +75,8 @@ function MapComponent() {
         const maxLng = bounds.getEast();
         const maxLat = bounds.getNorth();
         const returnAll = map.getZoom() > 15 ? 'true' : 'false';  // Check the zoom level here
-        let url = `https://575qjd8cuk.execute-api.us-east-1.amazonaws.com/prod/trees/search?min_lat=${minLat}&max_lat=${maxLat}&min_lng=${minLng}&max_lng=${maxLng}&limit=10000&return_all=${returnAll}&count=true&count_only=false`;
-
+        //let url = `https://575qjd8cuk.execute-api.us-east-1.amazonaws.com/prod/trees/search?min_lat=${minLat}&max_lat=${maxLat}&min_lng=${minLng}&max_lng=${maxLng}&limit=20000&return_all=${returnAll}&count=true&count_only=false`;
+        let url = `https://5p9hyrnb5a.execute-api.us-east-1.amazonaws.com/prod/trees/search?min_lat=${minLat}&max_lat=${maxLat}&min_lng=${minLng}&max_lng=${maxLng}&limit=20000&return_all=${returnAll}&count=true&count_only=false`;
         if (genusTypeRef.current && selectedGenusRef.current) {
             url += `&${genusTypeRef.current.value}=${selectedGenusRef.current}`;
         }
@@ -193,7 +193,7 @@ function MapComponent() {
             container: 'map',
             style: 'https://api.maptiler.com/maps/outdoor/style.json?key=6jk9aonLicRFoRqvljrc',
             center: [-123.1216, 49.2827],
-            zoom: 10,
+            zoom: 11,
         });
 
         const nav = new maplibregl.NavigationControl();
@@ -201,7 +201,8 @@ function MapComponent() {
 
         mapRef.current.on('load', () => {
             fetchDataForMap();
-            fetch('https://575qjd8cuk.execute-api.us-east-1.amazonaws.com/prod/data/overview')
+            //fetch('https://575qjd8cuk.execute-api.us-east-1.amazonaws.com/prod/data/overview')
+            fetch('https://5p9hyrnb5a.execute-api.us-east-1.amazonaws.com/prod/data/overview')
                 .then(response => response.json())
                 .then(overviewData => setData(overviewData));
 
