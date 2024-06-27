@@ -1,4 +1,4 @@
-import React, { useEffect, useState, useRef } from 'react';
+import React, { useEffect, useState, useRef, useCallback } from 'react';
 import maplibregl from 'maplibre-gl';
 import 'maplibre-gl/dist/maplibre-gl.css';
 import './MapComponent.css';
@@ -49,19 +49,19 @@ function MapComponent() {
 
     const MARGIN = 100;
 
-    const handleProvinceSelect = (selectedOption) => {
+    const handleProvinceSelect = useCallback((selectedOption) => {
         const coords = provinceCoordinates[selectedOption.value];
         if (coords && mapRef.current) {
             mapRef.current.flyTo({ center: coords, zoom: 6 });
         }
-    };
+    }, []);
 
     useEffect(() => {
         selectedGenusRef.current = selectedGenus;
         genusTypeRef.current = genusType;
     }, [selectedGenus, genusType]);
 
-    const fetchDataForMap = async () => {
+    const fetchDataForMap = useCallback(async () => {
         if (!mapRef.current) return;
 
         const map = mapRef.current;
@@ -192,9 +192,9 @@ function MapComponent() {
         } catch (error) {
             console.error("Failed to fetch map data:", error);
         }
-    };
+    }, []);
 
-    const fetchOverviewData = async () => {
+    const fetchOverviewData = useCallback(async () => {
         let url = 'https://5p9hyrnb5a.execute-api.us-east-1.amazonaws.com/prod/data/overview';
         if (genusTypeRef.current) {
             url += `?${genusTypeRef.current.value}=true`;
@@ -206,7 +206,7 @@ function MapComponent() {
         } catch (error) {
             console.error("Failed to fetch overview data:", error);
         }
-    };
+    }, []);
 
     useEffect(() => {
         const map = new maplibregl.Map({
@@ -231,15 +231,15 @@ function MapComponent() {
         });
 
         return () => map.remove();
-    }, []);
+    }, [fetchDataForMap, fetchOverviewData]);
 
     useEffect(() => {
         fetchDataForMap();
-    }, [genusType, selectedGenus]);
+    }, [genusType, selectedGenus, fetchDataForMap]);
 
     useEffect(() => {
         fetchOverviewData();
-    }, [genusType]);
+    }, [genusType, fetchOverviewData]);
 
     const options = [
         { value: 'botanical_name_genus', label: 'Botanical Genus', key: 'botanical_name_genus' },
