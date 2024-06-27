@@ -97,7 +97,7 @@ function MapComponent() {
                     'data': fetchedData,
                     'cluster': true,
                     'clusterMaxZoom': 16,
-                    'clusterRadius': 50,
+                    'clusterRadius': 20,
                 });
 
                 map.addLayer({
