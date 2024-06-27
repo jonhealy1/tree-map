@@ -47,7 +47,7 @@ function MapComponent() {
         "Quebec": [-71.2002, 46.8129],
     };
 
-    const MARGIN = 50;
+    const MARGIN = 100;
 
     const handleProvinceSelect = (selectedOption) => {
         const coords = provinceCoordinates[selectedOption.value];
@@ -194,6 +194,20 @@ function MapComponent() {
         }
     };
 
+    const fetchOverviewData = async () => {
+        let url = 'https://5p9hyrnb5a.execute-api.us-east-1.amazonaws.com/prod/data/overview';
+        if (genusTypeRef.current) {
+            url += `?${genusTypeRef.current.value}=true`;
+        }
+        try {
+            const response = await fetch(url);
+            const overviewData = await response.json();
+            setData(overviewData);
+        } catch (error) {
+            console.error("Failed to fetch overview data:", error);
+        }
+    };
+
     useEffect(() => {
         const map = new maplibregl.Map({
             container: 'map',
@@ -208,14 +222,7 @@ function MapComponent() {
 
         map.on('load', async () => {
             await fetchDataForMap();
-
-            try {
-                const response = await fetch('https://5p9hyrnb5a.execute-api.us-east-1.amazonaws.com/prod/data/overview');
-                const overviewData = await response.json();
-                setData(overviewData);
-            } catch (error) {
-                console.error("Failed to fetch overview data:", error);
-            }
+            await fetchOverviewData();
 
             map.on('moveend', () => {
                 setZoomLevel(map.getZoom().toFixed(2));
@@ -230,8 +237,12 @@ function MapComponent() {
         fetchDataForMap();
     }, [genusType, selectedGenus]);
 
+    useEffect(() => {
+        fetchOverviewData();
+    }, [genusType]);
+
     const options = [
-        { value: 'botanical_genus', label: 'Botanical Genus', key: 'botanical_name_genus' },
+        { value: 'botanical_name_genus', label: 'Botanical Genus', key: 'botanical_name_genus' },
         { value: 'common_genus', label: 'Common Genus', key: 'common_genus' },
     ];
 
