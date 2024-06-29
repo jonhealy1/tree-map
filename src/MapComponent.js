@@ -75,7 +75,7 @@ function MapComponent() {
         const maxLat = bounds.getNorth();
         const returnAll = map.getZoom() > 15 ? 'true' : 'false';
 
-        let url = `https://5p9hyrnb5a.execute-api.us-east-1.amazonaws.com/prod/trees/search?min_lat=${minLat}&max_lat=${maxLat}&min_lng=${minLng}&max_lng=${maxLng}&limit=30000&return_all=${returnAll}&count=true&count_only=false`;
+        let url = `https://5p9hyrnb5a.execute-api.us-east-1.amazonaws.com/prod/trees/search?min_lat=${minLat}&max_lat=${maxLat}&min_lng=${minLng}&max_lng=${maxLng}&limit=24000&return_all=${returnAll}&count=true&count_only=false`;
         if (genusTypeRef.current && selectedGenusRef.current) {
             url += `&${genusTypeRef.current.value}=${selectedGenusRef.current}`;
         }
