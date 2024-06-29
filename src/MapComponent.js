@@ -110,9 +110,9 @@ function MapComponent() {
             totalCount += quadrantData.count;
 
             // Update the map with data for the current quadrant
-            if (map.getSource('points')) {
+            if (map.isStyleLoaded() && map.getSource('points')) {
                 map.getSource('points').setData(combinedData);
-            } else {
+            } else if (map.isStyleLoaded()) {
                 map.addSource('points', {
                     'type': 'geojson',
                     'data': combinedData,
@@ -255,7 +255,9 @@ function MapComponent() {
     }, [fetchDataForMap, fetchOverviewData]);
 
     useEffect(() => {
-        fetchDataForMap();
+        if (mapRef.current && mapRef.current.isStyleLoaded()) {
+            fetchDataForMap();
+        }
     }, [genusType, selectedGenus, fetchDataForMap]);
 
     useEffect(() => {
