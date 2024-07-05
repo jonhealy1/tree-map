@@ -5,6 +5,15 @@ import './MapComponent.css';
 import Select from 'react-select';
 import logo from './assets/tree-map-high-white.png';
 
+// Debounce function to delay the execution of a function
+function debounce(func, wait) {
+    let timeout;
+    return function(...args) {
+        clearTimeout(timeout);
+        timeout = setTimeout(() => func.apply(this, args), wait);
+    };
+}
+
 function MapComponent() {
     const [data, setData] = useState({});
     const [genusType, setGenusType] = useState(null);
@@ -62,9 +71,6 @@ function MapComponent() {
     }, [selectedGenus, genusType]);
 
     const calculateQuadrantBounds = (bounds) => {
-        const midLat = (bounds.getSouth() + bounds.getNorth()) / 2;
-        const midLng = (bounds.getWest() + bounds.getEast()) / 2;
-
         const latStep = (bounds.getNorth() - bounds.getSouth()) / 3;
         const lngStep = (bounds.getEast() - bounds.getWest()) / 3;
 
@@ -87,7 +93,7 @@ function MapComponent() {
         const { minLat, maxLat, minLng, maxLng } = quadrant;
         const returnAll = mapRef.current.getZoom() > 15 ? 'true' : 'false';
 
-        let url = `https://5p9hyrnb5a.execute-api.us-east-1.amazonaws.com/prod/trees/search?min_lat=${minLat}&max_lat=${maxLat}&min_lng=${minLng}&max_lng=${maxLng}&limit=20000&return_all=${returnAll}&count=true&count_only=false`;
+        let url = `https://5p9hyrnb5a.execute-api.us-east-1.amazonaws.com/prod/trees/search?min_lat=${minLat}&max_lat=${maxLat}&min_lng=${minLng}&max_lng=${maxLng}&limit=11000&return_all=${returnAll}&count=true&count_only=false`;
         if (genusTypeRef.current && selectedGenusRef.current) {
             url += `&${genusTypeRef.current.value}=${selectedGenusRef.current}`;
         }
@@ -225,6 +231,8 @@ function MapComponent() {
         }
     }, [selectedGenusRef, genusTypeRef, mapRef]);
 
+    const debouncedFetchDataForMap = useCallback(debounce(fetchDataForMap, 500), [fetchDataForMap]);
+
     const fetchOverviewData = useCallback(async () => {
         let url = 'https://5p9hyrnb5a.execute-api.us-east-1.amazonaws.com/prod/data/overview';
         if (genusTypeRef.current) {
@@ -257,12 +265,12 @@ function MapComponent() {
 
             map.on('moveend', () => {
                 setZoomLevel(map.getZoom().toFixed(2));
-                fetchDataForMap();
+                debouncedFetchDataForMap();
             });
         });
 
         return () => map.remove();
-    }, [fetchDataForMap, fetchOverviewData]);
+    }, [fetchDataForMap, fetchOverviewData, debouncedFetchDataForMap]);
 
     useEffect(() => {
         if (mapRef.current && mapRef.current.isStyleLoaded()) {
