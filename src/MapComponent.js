@@ -47,7 +47,7 @@ function MapComponent() {
         "Quebec": [-71.2002, 46.8129],
     };
 
-    const MARGIN = 100;
+    const MARGIN = 40;
 
     const handleProvinceSelect = useCallback((selectedOption) => {
         const coords = provinceCoordinates[selectedOption.value];
