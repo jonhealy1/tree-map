@@ -5,6 +5,15 @@ import './MapComponent.css';
 import Select from 'react-select';
 import logo from './assets/tree-map-high-white.png';
 
+// Debounce function to delay the execution of a function
+function debounce(func, wait) {
+    let timeout;
+    return function(...args) {
+        clearTimeout(timeout);
+        timeout = setTimeout(() => func.apply(this, args), wait);
+    };
+}
+
 function MapComponent() {
     const [data, setData] = useState({});
     const [genusType, setGenusType] = useState(null);
@@ -47,7 +56,7 @@ function MapComponent() {
         "Quebec": [-71.2002, 46.8129],
     };
 
-    const MARGIN = 100;
+    const MARGIN = 40;
 
     const handleProvinceSelect = useCallback((selectedOption) => {
         const coords = provinceCoordinates[selectedOption.value];
@@ -61,6 +70,44 @@ function MapComponent() {
         genusTypeRef.current = genusType;
     }, [selectedGenus, genusType]);
 
+    const calculateQuadrantBounds = (bounds) => {
+        const latStep = (bounds.getNorth() - bounds.getSouth()) / 3;
+        const lngStep = (bounds.getEast() - bounds.getWest()) / 3;
+
+        return [
+            { minLat: bounds.getSouth(), maxLat: bounds.getSouth() + latStep, minLng: bounds.getWest(), maxLng: bounds.getWest() + lngStep }, // Bottom-left
+            { minLat: bounds.getSouth(), maxLat: bounds.getSouth() + latStep, minLng: bounds.getWest() + lngStep, maxLng: bounds.getWest() + 2 * lngStep }, // Bottom-center
+            { minLat: bounds.getSouth(), maxLat: bounds.getSouth() + latStep, minLng: bounds.getWest() + 2 * lngStep, maxLng: bounds.getEast() }, // Bottom-right
+
+            { minLat: bounds.getSouth() + latStep, maxLat: bounds.getSouth() + 2 * latStep, minLng: bounds.getWest(), maxLng: bounds.getWest() + lngStep }, // Middle-left
+            { minLat: bounds.getSouth() + latStep, maxLat: bounds.getSouth() + 2 * latStep, minLng: bounds.getWest() + lngStep, maxLng: bounds.getWest() + 2 * lngStep }, // Middle-center
+            { minLat: bounds.getSouth() + latStep, maxLat: bounds.getSouth() + 2 * latStep, minLng: bounds.getWest() + 2 * lngStep, maxLng: bounds.getEast() }, // Middle-right
+
+            { minLat: bounds.getSouth() + 2 * latStep, maxLat: bounds.getNorth(), minLng: bounds.getWest(), maxLng: bounds.getWest() + lngStep }, // Top-left
+            { minLat: bounds.getSouth() + 2 * latStep, maxLat: bounds.getNorth(), minLng: bounds.getWest() + lngStep, maxLng: bounds.getWest() + 2 * lngStep }, // Top-center
+            { minLat: bounds.getSouth() + 2 * latStep, maxLat: bounds.getNorth(), minLng: bounds.getWest() + 2 * lngStep, maxLng: bounds.getEast() }  // Top-right
+        ];
+    };
+
+    const fetchDataForQuadrant = async (quadrant) => {
+        const { minLat, maxLat, minLng, maxLng } = quadrant;
+        const returnAll = mapRef.current.getZoom() > 15 ? 'true' : 'false';
+
+        let url = `https://5p9hyrnb5a.execute-api.us-east-1.amazonaws.com/prod/trees/search?min_lat=${minLat}&max_lat=${maxLat}&min_lng=${minLng}&max_lng=${maxLng}&limit=11000&return_all=${returnAll}&count=true&count_only=false`;
+        if (genusTypeRef.current && selectedGenusRef.current) {
+            url += `&${genusTypeRef.current.value}=${selectedGenusRef.current}`;
+        }
+
+        try {
+            const response = await fetch(url);
+            const fetchedData = await response.json();
+            return fetchedData;
+        } catch (error) {
+            console.error(`Failed to fetch data for quadrant (${minLat}, ${maxLat}, ${minLng}, ${maxLng}):`, error);
+            return { features: [], count: 0 };
+        }
+    };
+
     const fetchDataForMap = useCallback(async () => {
         if (!mapRef.current) return;
 
@@ -69,35 +116,25 @@ function MapComponent() {
         const bottomRight = map.unproject([map.getContainer().clientWidth - MARGIN, map.getContainer().clientHeight - MARGIN]);
         const bounds = new maplibregl.LngLatBounds(topLeft, bottomRight);
 
-        const minLng = bounds.getWest();
-        const minLat = bounds.getSouth();
-        const maxLng = bounds.getEast();
-        const maxLat = bounds.getNorth();
-        const returnAll = map.getZoom() > 15 ? 'true' : 'false';
+        const quadrants = calculateQuadrantBounds(bounds);
+        let totalCount = 0;
+        let combinedData = { type: "FeatureCollection", features: [] };
 
-        let url = `https://5p9hyrnb5a.execute-api.us-east-1.amazonaws.com/prod/trees/search?min_lat=${minLat}&max_lat=${maxLat}&min_lng=${minLng}&max_lng=${maxLng}&limit=24000&return_all=${returnAll}&count=true&count_only=false`;
-        if (genusTypeRef.current && selectedGenusRef.current) {
-            url += `&${genusTypeRef.current.value}=${selectedGenusRef.current}`;
-        }
+        for (const quadrant of quadrants) {
+            const quadrantData = await fetchDataForQuadrant(quadrant);
+            combinedData.features = combinedData.features.concat(quadrantData.features);
+            totalCount += quadrantData.count;
 
-        try {
-            const response = await fetch(url);
-            const fetchedData = await response.json();
-            setInfo({ count: fetchedData.count });
-            if (!map.isStyleLoaded()) return;
-
-            const zoom = map.getZoom();
-            const circleSize = zoom < 5 ? 3 : zoom < 12 ? 7 : 9;
-
-            if (map.getSource('points')) {
-                map.getSource('points').setData(fetchedData);
-            } else {
+            // Update the map with data for the current quadrant
+            if (map.isStyleLoaded() && map.getSource('points')) {
+                map.getSource('points').setData(combinedData);
+            } else if (map.isStyleLoaded()) {
                 map.addSource('points', {
                     'type': 'geojson',
-                    'data': fetchedData,
+                    'data': combinedData,
                     'cluster': true,
-                    'clusterMaxZoom': 16,
-                    'clusterRadius': 20,
+                    'clusterMaxZoom': 18,
+                    'clusterRadius': 60,
                 });
 
                 map.addLayer({
@@ -105,7 +142,7 @@ function MapComponent() {
                     'type': 'circle',
                     'source': 'points',
                     'paint': {
-                        'circle-radius': circleSize,
+                        'circle-radius': 7, // Adjust circle size if needed
                         'circle-color': '#000000',
                     },
                 });
@@ -189,10 +226,12 @@ function MapComponent() {
                     map.getCanvas().style.cursor = '';
                 });
             }
-        } catch (error) {
-            console.error("Failed to fetch map data:", error);
+
+            setInfo({ count: totalCount });
         }
-    }, []);
+    }, [selectedGenusRef, genusTypeRef, mapRef]);
+
+    const debouncedFetchDataForMap = useCallback(debounce(fetchDataForMap, 500), [fetchDataForMap]);
 
     const fetchOverviewData = useCallback(async () => {
         let url = 'https://5p9hyrnb5a.execute-api.us-east-1.amazonaws.com/prod/data/overview';
@@ -226,15 +265,17 @@ function MapComponent() {
 
             map.on('moveend', () => {
                 setZoomLevel(map.getZoom().toFixed(2));
-                fetchDataForMap();
+                debouncedFetchDataForMap();
             });
         });
 
         return () => map.remove();
-    }, [fetchDataForMap, fetchOverviewData]);
+    }, [fetchDataForMap, fetchOverviewData, debouncedFetchDataForMap]);
 
     useEffect(() => {
-        fetchDataForMap();
+        if (mapRef.current && mapRef.current.isStyleLoaded()) {
+            fetchDataForMap();
+        }
     }, [genusType, selectedGenus, fetchDataForMap]);
 
     useEffect(() => {
