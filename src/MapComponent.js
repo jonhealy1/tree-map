@@ -65,11 +65,21 @@ function MapComponent() {
         const midLat = (bounds.getSouth() + bounds.getNorth()) / 2;
         const midLng = (bounds.getWest() + bounds.getEast()) / 2;
 
+        const latStep = (bounds.getNorth() - bounds.getSouth()) / 3;
+        const lngStep = (bounds.getEast() - bounds.getWest()) / 3;
+
         return [
-            { minLat: bounds.getSouth(), maxLat: midLat, minLng: bounds.getWest(), maxLng: midLng }, // Bottom-left
-            { minLat: bounds.getSouth(), maxLat: midLat, minLng: midLng, maxLng: bounds.getEast() }, // Bottom-right
-            { minLat: midLat, maxLat: bounds.getNorth(), minLng: bounds.getWest(), maxLng: midLng }, // Top-left
-            { minLat: midLat, maxLat: bounds.getNorth(), minLng: midLng, maxLng: bounds.getEast() }  // Top-right
+            { minLat: bounds.getSouth(), maxLat: bounds.getSouth() + latStep, minLng: bounds.getWest(), maxLng: bounds.getWest() + lngStep }, // Bottom-left
+            { minLat: bounds.getSouth(), maxLat: bounds.getSouth() + latStep, minLng: bounds.getWest() + lngStep, maxLng: bounds.getWest() + 2 * lngStep }, // Bottom-center
+            { minLat: bounds.getSouth(), maxLat: bounds.getSouth() + latStep, minLng: bounds.getWest() + 2 * lngStep, maxLng: bounds.getEast() }, // Bottom-right
+
+            { minLat: bounds.getSouth() + latStep, maxLat: bounds.getSouth() + 2 * latStep, minLng: bounds.getWest(), maxLng: bounds.getWest() + lngStep }, // Middle-left
+            { minLat: bounds.getSouth() + latStep, maxLat: bounds.getSouth() + 2 * latStep, minLng: bounds.getWest() + lngStep, maxLng: bounds.getWest() + 2 * lngStep }, // Middle-center
+            { minLat: bounds.getSouth() + latStep, maxLat: bounds.getSouth() + 2 * latStep, minLng: bounds.getWest() + 2 * lngStep, maxLng: bounds.getEast() }, // Middle-right
+
+            { minLat: bounds.getSouth() + 2 * latStep, maxLat: bounds.getNorth(), minLng: bounds.getWest(), maxLng: bounds.getWest() + lngStep }, // Top-left
+            { minLat: bounds.getSouth() + 2 * latStep, maxLat: bounds.getNorth(), minLng: bounds.getWest() + lngStep, maxLng: bounds.getWest() + 2 * lngStep }, // Top-center
+            { minLat: bounds.getSouth() + 2 * latStep, maxLat: bounds.getNorth(), minLng: bounds.getWest() + 2 * lngStep, maxLng: bounds.getEast() }  // Top-right
         ];
     };
 
@@ -77,7 +87,7 @@ function MapComponent() {
         const { minLat, maxLat, minLng, maxLng } = quadrant;
         const returnAll = mapRef.current.getZoom() > 15 ? 'true' : 'false';
 
-        let url = `https://5p9hyrnb5a.execute-api.us-east-1.amazonaws.com/prod/trees/search?min_lat=${minLat}&max_lat=${maxLat}&min_lng=${minLng}&max_lng=${maxLng}&limit=30000&return_all=${returnAll}&count=true&count_only=false`;
+        let url = `https://5p9hyrnb5a.execute-api.us-east-1.amazonaws.com/prod/trees/search?min_lat=${minLat}&max_lat=${maxLat}&min_lng=${minLng}&max_lng=${maxLng}&limit=20000&return_all=${returnAll}&count=true&count_only=false`;
         if (genusTypeRef.current && selectedGenusRef.current) {
             url += `&${genusTypeRef.current.value}=${selectedGenusRef.current}`;
         }
