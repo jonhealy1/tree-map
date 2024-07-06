@@ -134,7 +134,7 @@ function MapComponent() {
                     'data': combinedData,
                     'cluster': true,
                     'clusterMaxZoom': 18,
-                    'clusterRadius': 60,
+                    'clusterRadius': 70,
                 });
 
                 map.addLayer({
@@ -231,7 +231,7 @@ function MapComponent() {
         }
     }, [selectedGenusRef, genusTypeRef, mapRef]);
 
-    const debouncedFetchDataForMap = useCallback(debounce(fetchDataForMap, 500), [fetchDataForMap]);
+    const debouncedFetchDataForMap = useCallback(debounce(fetchDataForMap, 700), [fetchDataForMap]);
 
     const fetchOverviewData = useCallback(async () => {
         let url = 'https://5p9hyrnb5a.execute-api.us-east-1.amazonaws.com/prod/data/overview';
